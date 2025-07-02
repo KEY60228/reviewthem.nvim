@@ -1,0 +1,15 @@
+# Vim/Neovim
+doc/tags
+*.swp
+*.swo
+*~
+.netrwhist
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test/Development
+.tests/
+*.log
+
