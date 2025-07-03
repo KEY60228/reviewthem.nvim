@@ -25,6 +25,12 @@ M.setup = function()
       desc = "Add a comment to the current line or selection",
       range = true,
     })
+
+  vim.api.nvim_create_user_command("ReviewitSubmit", function()
+    review.submit()
+  end, {
+      desc = "Submit review comments",
+    })
 end
 
 return M

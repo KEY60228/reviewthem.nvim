@@ -26,5 +26,10 @@ M.start = function(base_ref, compare_ref)
   return true
 end
 
+-- Close diffview session
+M.close = function()
+  pcall(vim.cmd, "DiffviewClose")
+end
+
 return M
 

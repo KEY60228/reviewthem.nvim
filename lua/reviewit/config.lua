@@ -3,6 +3,8 @@ local M = {}
 M.defaults = {
   diff_tool = "diffview",  -- Currently only "diffview" is supported. More tools will be added in the future.
   comment_sign = "💬",
+  submit_format = "markdown",  -- "markdown" or "json"
+  submit_destination = "clipboard",  -- "clipboard" or file path relative to project root
 }
 
 M.options = {}

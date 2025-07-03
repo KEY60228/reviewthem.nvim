@@ -37,8 +37,40 @@ M.get_comments = function(file)
   return state.comments
 end
 
+M.clear_comments = function()
+  state.comments = {}
+end
+
 M.set_current_diff_tool = function(tool)
   state.current_diff_tool = tool
+end
+
+M.get_current_diff_tool = function()
+  return state.current_diff_tool
+end
+
+M.get_all_comments_structured = function()
+  local structured = {
+    review = {
+      base_ref = state.base_branch,
+      compare_ref = state.compare_branch,
+      timestamp = os.date("%Y-%m-%d %H:%M:%S"),
+      comments = {},
+    },
+  }
+
+  for file, file_comments in pairs(state.comments) do
+    for _, comment in ipairs(file_comments) do
+      table.insert(structured.review.comments, {
+        file = file,
+        line_start = comment.line_start,
+        line_end = comment.line_end,
+        comment = comment.text,
+      })
+    end
+  end
+
+  return structured
 end
 
 return M

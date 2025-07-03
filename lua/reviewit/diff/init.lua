@@ -33,5 +33,13 @@ M.start = function(tool_name, base_branch, compare_branch)
   return tool.start(base_branch, compare_branch)
 end
 
+-- Close current diff session
+M.close = function(tool_name)
+  local tool = diff_tools[tool_name]
+  if tool and tool.close then
+    tool.close()
+  end
+end
+
 return M
 
