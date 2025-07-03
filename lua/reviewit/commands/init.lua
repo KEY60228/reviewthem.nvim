@@ -14,6 +14,7 @@ M.setup = function()
       desc = "Start a code review between two branches",
     })
 
+
   vim.api.nvim_create_user_command("ReviewitAddComment", function(args)
     if args.range == 2 then
       -- Range specified (Visual mode or :<range>ReviewitAddComment)
@@ -31,6 +32,12 @@ M.setup = function()
     review.submit()
   end, {
       desc = "Submit review comments",
+    })
+
+  vim.api.nvim_create_user_command("ReviewitAbort", function()
+    review.abort()
+  end, {
+      desc = "Abort the current review session",
     })
 
   vim.api.nvim_create_user_command("ReviewitShowComments", function()

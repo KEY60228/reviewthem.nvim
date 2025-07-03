@@ -161,6 +161,45 @@ M.format_as_markdown = function(structured)
   return table.concat(lines, "\n")
 end
 
+M.abort = function()
+  -- Confirm if there are unsaved comments
+  local all_comments = state.get_comments()
+  local comment_count = 0
+  for _, file_comments in pairs(all_comments) do
+    comment_count = comment_count + #file_comments
+  end
+
+  if comment_count > 0 then
+    local confirm = vim.fn.confirm(
+      string.format("Abort review? This will discard %d unsaved comment(s).", comment_count),
+      "&Yes\n&No",
+      2
+    )
+    if confirm ~= 1 then
+      return
+    end
+  end
+
+  -- Clear all state
+  state.clear_comments()
+  state.clear_reviewed_files()
+  state.set_review_branches(nil, nil)
+  state.set_diff_files({})
+
+  -- Clear signs
+  M._clear_signs()
+
+  -- Close current diff tool
+  local diff = require("reviewit.diff")
+  local current_tool = state.get_current_diff_tool()
+  if current_tool then
+    diff.close(current_tool)
+    state.set_current_diff_tool(nil)
+  end
+
+  vim.notify("Review session aborted", vim.log.levels.INFO)
+end
+
 M._clear_signs = function()
   vim.fn.sign_unplace("reviewit")
 end
