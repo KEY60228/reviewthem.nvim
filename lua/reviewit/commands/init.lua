@@ -56,6 +56,12 @@ M.setup = function()
   end, {
       desc = "Toggle reviewed status of current file",
     })
+
+  vim.api.nvim_create_user_command("ReviewitStatus", function()
+    files.show_review_status()
+  end, {
+      desc = "Show review status of all files",
+    })
 end
 
 return M

@@ -18,10 +18,16 @@ M.start = function(base_ref, compare_ref)
 
   state.set_review_branches(base_ref, compare_ref)
 
-  local files = git.get_diff_files(base_ref, compare_ref)
-  if #files == 0 then
+  local diff_results = git.get_diff_files(base_ref, compare_ref)
+  if #diff_results == 0 then
     vim.notify("reviewit.nvim: No differences found", vim.log.levels.INFO)
     return
+  end
+
+  -- Extract just the file names
+  local files = {}
+  for _, result in ipairs(diff_results) do
+    table.insert(files, result.file)
   end
 
   state.set_diff_files(files)

@@ -14,8 +14,16 @@ M.set_review_branches = function(base, compare)
   state.compare_branch = compare
 end
 
+M.get_review_branches = function()
+  return state.base_branch, state.compare_branch
+end
+
 M.set_diff_files = function(files)
   state.diff_files = files
+end
+
+M.get_diff_files = function()
+  return state.diff_files
 end
 
 M.add_comment = function(file, line_start, line_end, comment_text)

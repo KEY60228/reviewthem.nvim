@@ -1,6 +1,7 @@
 local M = {}
 local state = require("reviewit.state")
 local git = require("reviewit.git")
+local config = require("reviewit.config")
 
 M.mark_current_file_reviewed = function()
   local absolute_path = vim.fn.expand("%:p")
@@ -55,6 +56,12 @@ M._update_signs = function()
   else
     vim.fn.sign_unplace("reviewit_reviewed")
   end
+end
+
+M.show_review_status = function()
+  local opts = config.get()
+  local ui = require("reviewit.ui")
+  ui.show_status(opts.ui)
 end
 
 return M
