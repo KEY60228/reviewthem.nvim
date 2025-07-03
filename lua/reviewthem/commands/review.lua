@@ -1,7 +1,7 @@
 local M = {}
-local git = require("reviewit.git")
-local config = require("reviewit.config")
-local state = require("reviewit.state")
+local git = require("reviewthem.git")
+local config = require("reviewthem.config")
+local state = require("reviewthem.state")
 
 M.start = function(base_ref, compare_ref)
   -- If no base_ref, use HEAD (current branch)
@@ -12,7 +12,7 @@ M.start = function(base_ref, compare_ref)
 
   local valid, err = git.validate_references(base_ref, compare_ref)
   if not valid then
-    vim.notify("reviewit.nvim: " .. err, vim.log.levels.ERROR)
+    vim.notify("reviewthem.nvim: " .. err, vim.log.levels.ERROR)
     return
   end
 
@@ -22,7 +22,7 @@ M.start = function(base_ref, compare_ref)
 
   local diff_results = git.get_diff_files(base_ref, compare_ref)
   if #diff_results == 0 then
-    vim.notify("reviewit.nvim: No differences found", vim.log.levels.INFO)
+    vim.notify("reviewthem.nvim: No differences found", vim.log.levels.INFO)
     state.end_review_session()  -- End session if no diffs
     return
   end
@@ -36,13 +36,13 @@ M.start = function(base_ref, compare_ref)
   state.set_diff_files(files)
 
   local opts = config.get()
-  local diff = require("reviewit.diff")
+  local diff = require("reviewthem.diff")
 
   state.set_current_diff_tool(opts.diff_tool)
 
   local success = diff.start(opts.diff_tool, base_ref, compare_ref)
   if not success then
-    vim.notify("reviewit.nvim: Failed to start diff tool", vim.log.levels.ERROR)
+    vim.notify("reviewthem.nvim: Failed to start diff tool", vim.log.levels.ERROR)
     state.end_review_session()  -- End session if diff tool fails
   else
     vim.notify(string.format("Review session started: %s...%s", base_ref, compare_ref or "Working Directory"), vim.log.levels.INFO)
@@ -86,7 +86,7 @@ M.submit = function()
     -- Generate timestamp-based filename
     local timestamp = os.date("%Y%m%d_%H%M%S")
     local ext = opts.submit_format == "json" and "json" or "md"
-    local filename = string.format("%s_reviewit.%s", timestamp, ext)
+    local filename = string.format("%s_reviewthem.%s", timestamp, ext)
 
     -- Determine file path
     local file_path
@@ -125,7 +125,7 @@ M.submit = function()
   M._clear_signs()
 
   -- Close current diff tool
-  local diff = require("reviewit.diff")
+  local diff = require("reviewthem.diff")
   local current_tool = state.get_current_diff_tool()
   if current_tool then
     diff.close(current_tool)
@@ -207,7 +207,7 @@ M.abort = function()
   M._clear_signs()
 
   -- Close current diff tool
-  local diff = require("reviewit.diff")
+  local diff = require("reviewthem.diff")
   local current_tool = state.get_current_diff_tool()
   if current_tool then
     diff.close(current_tool)
@@ -221,7 +221,7 @@ M.abort = function()
 end
 
 M._clear_signs = function()
-  vim.fn.sign_unplace("reviewit")
+  vim.fn.sign_unplace("reviewthem")
 end
 
 return M

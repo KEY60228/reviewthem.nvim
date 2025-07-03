@@ -1,7 +1,7 @@
 local M = {}
-local state = require("reviewit.state")
-local config = require("reviewit.config")
-local git = require("reviewit.git")
+local state = require("reviewthem.state")
+local config = require("reviewthem.config")
+local git = require("reviewthem.git")
 
 -- Single line comment (Normal mode)
 M.add_comment = function()
@@ -79,7 +79,7 @@ M._update_signs = function()
   })
 
   for _, comment in ipairs(comments) do
-    vim.fn.sign_place(0, "reviewit", "ReviewComment", vim.fn.bufnr(), {
+    vim.fn.sign_place(0, "reviewthem", "ReviewComment", vim.fn.bufnr(), {
       lnum = comment.line_start,
       priority = 10,
     })
@@ -101,7 +101,7 @@ M.show_comments = function()
   end
 
   local opts = config.get()
-  local ui = require("reviewit.ui")
+  local ui = require("reviewthem.ui")
   ui.show_comments(opts.ui)
 end
 

@@ -1,10 +1,10 @@
 local M = {}
 
 M.setup = function()
-  local config = require("reviewit.config")
-  local review = require("reviewit.commands.review")
-  local comments = require("reviewit.commands.comments")
-  local files = require("reviewit.commands.files")
+  local config = require("reviewthem.config")
+  local review = require("reviewthem.commands.review")
+  local comments = require("reviewthem.commands.comments")
+  local files = require("reviewthem.commands.files")
 
   local opts = config.get()
   local keymaps = opts.keymaps

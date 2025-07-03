@@ -117,7 +117,7 @@ end
 -- Ensure review session is active, show error if not
 M.ensure_review_active = function()
   if not M.is_review_active() then
-    vim.notify("No review session is active. Use :ReviewitStart to begin a review.", vim.log.levels.ERROR)
+    vim.notify("No review session is active. Use :ReviewThemStart to begin a review.", vim.log.levels.ERROR)
     return false
   end
   return true

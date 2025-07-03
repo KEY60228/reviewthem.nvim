@@ -1,7 +1,7 @@
 local M = {}
-local state = require("reviewit.state")
-local git = require("reviewit.git")
-local config = require("reviewit.config")
+local state = require("reviewthem.state")
+local git = require("reviewthem.git")
+local config = require("reviewthem.config")
 
 M.mark_current_file_reviewed = function()
   if not state.ensure_review_active() then
@@ -16,7 +16,7 @@ M.mark_current_file_reviewed = function()
   M._update_signs()
 
   -- Update statusline for builtin diff
-  vim.api.nvim_exec_autocmds("User", { pattern = "ReviewitStatusChanged" })
+  vim.api.nvim_exec_autocmds("User", { pattern = "ReviewThemStatusChanged" })
 end
 
 M.unmark_current_file_reviewed = function()
@@ -32,7 +32,7 @@ M.unmark_current_file_reviewed = function()
   M._update_signs()
 
   -- Update statusline for builtin diff
-  vim.api.nvim_exec_autocmds("User", { pattern = "ReviewitStatusChanged" })
+  vim.api.nvim_exec_autocmds("User", { pattern = "ReviewThemStatusChanged" })
 end
 
 M.toggle_current_file_reviewed = function()
@@ -61,12 +61,12 @@ M._update_signs = function()
       texthl = "DiagnosticOk",
     })
 
-    vim.fn.sign_place(0, "reviewit_reviewed", "ReviewedFile", vim.fn.bufnr(), {
+    vim.fn.sign_place(0, "reviewthem_reviewed", "ReviewedFile", vim.fn.bufnr(), {
       lnum = 1,
       priority = 5,
     })
   else
-    vim.fn.sign_unplace("reviewit_reviewed")
+    vim.fn.sign_unplace("reviewthem_reviewed")
   end
 end
 
@@ -76,7 +76,7 @@ M.show_review_status = function()
   end
 
   local opts = config.get()
-  local ui = require("reviewit.ui")
+  local ui = require("reviewthem.ui")
   ui.show_status(opts.ui)
 end
 

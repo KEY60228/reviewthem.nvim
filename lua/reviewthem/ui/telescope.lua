@@ -14,7 +14,7 @@ M.show_comments = function()
     return
   end
 
-  local state = require("reviewit.state")
+  local state = require("reviewthem.state")
   local pickers = require("telescope.pickers")
   local finders = require("telescope.finders")
   local conf = require("telescope.config").values
@@ -71,7 +71,7 @@ M.show_status = function()
     return
   end
 
-  local state = require("reviewit.state")
+  local state = require("reviewthem.state")
   local pickers = require("telescope.pickers")
   local finders = require("telescope.finders")
   local conf = require("telescope.config").values

@@ -1,25 +1,25 @@
-*reviewit.txt*	A Neovim plugin for streamlining code reviews
+*reviewthem.txt*	A Neovim plugin for streamlining code reviews
 
 Author:  Kenta Yamaguchi
 License: MIT
 
 ==============================================================================
-CONTENTS                                                    *reviewit-contents*
+CONTENTS                                                    *reviewthem-contents*
 
-    1. Introduction ......................... |reviewit-introduction|
-    2. Requirements ......................... |reviewit-requirements|
-    3. Installation ......................... |reviewit-installation|
-    4. Setup ................................ |reviewit-setup|
-    5. Commands ............................. |reviewit-commands|
-    6. Mappings ............................. |reviewit-mappings|
-    7. Configuration ........................ |reviewit-configuration|
-    8. Usage ................................ |reviewit-usage|
-    9. Health Check ......................... |reviewit-health|
+    1. Introduction ......................... |reviewthem-introduction|
+    2. Requirements ......................... |reviewthem-requirements|
+    3. Installation ......................... |reviewthem-installation|
+    4. Setup ................................ |reviewthem-setup|
+    5. Commands ............................. |reviewthem-commands|
+    6. Mappings ............................. |reviewthem-mappings|
+    7. Configuration ........................ |reviewthem-configuration|
+    8. Usage ................................ |reviewthem-usage|
+    9. Health Check ......................... |reviewthem-health|
 
 ==============================================================================
-1. INTRODUCTION                                         *reviewit-introduction*
+1. INTRODUCTION                                         *reviewthem-introduction*
 
-reviewit.nvim is a Neovim plugin designed to streamline code reviews within
+reviewthem.nvim is a Neovim plugin designed to streamline code reviews within
 your editor. It allows you to:
 
 - Start review sessions between branches or commits
@@ -29,27 +29,27 @@ your editor. It allows you to:
 - Export review comments in various formats
 
 ==============================================================================
-2. REQUIREMENTS                                         *reviewit-requirements*
+2. REQUIREMENTS                                         *reviewthem-requirements*
 
 - Neovim >= 0.7.0
 - Git
-- diffview.nvim (required)
+- diffview.nvim (required for now - more diff tools coming soon!)
 - telescope.nvim (optional, for enhanced UI)
 - plenary.nvim (optional, recommended)
 
 ==============================================================================
-3. INSTALLATION                                         *reviewit-installation*
+3. INSTALLATION                                         *reviewthem-installation*
 
 Using lazy.nvim: >lua
 
     {
-      "KEY60228/reviewit_nvim",
+      "KEY60228/reviewthem.nvim",
       dependencies = {
         "sindrets/diffview.nvim",
         "nvim-telescope/telescope.nvim", -- optional
       },
       config = function()
-        require("reviewit").setup({
+        require("reviewthem").setup({
           -- your configuration
         })
       end,
@@ -59,13 +59,13 @@ Using lazy.nvim: >lua
 Using packer.nvim: >lua
 
     use {
-      "KEY60228/reviewit_nvim",
+      "KEY60228/reviewthem.nvim",
       requires = {
         "sindrets/diffview.nvim",
         "nvim-telescope/telescope.nvim", -- optional
       },
       config = function()
-        require("reviewit").setup({
+        require("reviewthem").setup({
           -- your configuration
         })
       end,
@@ -73,88 +73,88 @@ Using packer.nvim: >lua
 <
 
 ==============================================================================
-4. SETUP                                                       *reviewit-setup*
+4. SETUP                                                       *reviewthem-setup*
 
 Call the setup function with your configuration: >lua
 
-    require("reviewit").setup({
+    require("reviewthem").setup({
       diff_tool = "diffview",
       comment_sign = "💬",
       submit_format = "markdown",
       submit_destination = "clipboard",
       ui = "telescope", -- or "builtin"
       keymaps = {
-        start_review = "<leader>rstart",
-        add_comment = "<leader>rc",
-        submit_review = "<leader>rsubmit",
-        abort_review = "<leader>rabort",
-        show_comments = "<leader>rsc",
-        toggle_reviewed = "<leader>rmr",
-        show_status = "<leader>rrs",
+        start_review = "<leader>rtstart",
+        add_comment = "<leader>rtc",
+        submit_review = "<leader>rtsubmit",
+        abort_review = "<leader>rtabort",
+        show_comments = "<leader>rtsc",
+        toggle_reviewed = "<leader>rtmr",
+        show_status = "<leader>rtrs",
       },
     })
 <
 
 ==============================================================================
-5. COMMANDS                                                 *reviewit-commands*
+5. COMMANDS                                                 *reviewthem-commands*
 
-                                                            *:ReviewitStart*
-:ReviewitStart [{base}] [{compare}]
+                                                            *:ReviewThemStart*
+:ReviewThemStart [{base}] [{compare}]
     Start a review session. If no arguments provided, compares HEAD with
     working directory. If only {base} provided, compares {base} with working
     directory. If both provided, compares {base} with {compare}.
 
-                                                        *:ReviewitAddComment*
-:ReviewitAddComment
+                                                        *:ReviewThemAddComment*
+:ReviewThemAddComment
     Add a comment to the current line. In visual mode, adds comment to the
     selected range.
 
-:[range]ReviewitAddComment
+:[range]ReviewThemAddComment
     Add a comment to the specified line range.
 
-                                                           *:ReviewitSubmit*
-:ReviewitSubmit
+                                                           *:ReviewThemSubmit*
+:ReviewThemSubmit
     Submit all review comments. Output format and destination are determined
     by configuration.
 
-                                                            *:ReviewitAbort*
-:ReviewitAbort
+                                                            *:ReviewThemAbort*
+:ReviewThemAbort
     Abort the current review session. Prompts for confirmation if there are
     unsaved comments.
 
-                                                      *:ReviewitShowComments*
-:ReviewitShowComments
+                                                      *:ReviewThemShowComments*
+:ReviewThemShowComments
     Display all comments for the current review session.
 
-                                                   *:ReviewitMarkAsReviewed*
-:ReviewitMarkAsReviewed
+                                                   *:ReviewThemMarkAsReviewed*
+:ReviewThemMarkAsReviewed
     Mark the current file as reviewed.
 
-                                                 *:ReviewitUnmarkAsReviewed*
-:ReviewitUnmarkAsReviewed
+                                                 *:ReviewThemUnmarkAsReviewed*
+:ReviewThemUnmarkAsReviewed
     Unmark the current file as reviewed.
 
-                                                   *:ReviewitToggleReviewed*
-:ReviewitToggleReviewed
+                                                   *:ReviewThemToggleReviewed*
+:ReviewThemToggleReviewed
     Toggle the reviewed status of the current file.
 
-                                                           *:ReviewitStatus*
-:ReviewitStatus
+                                                           *:ReviewThemStatus*
+:ReviewThemStatus
     Show the review status of all files, including which files have been
     reviewed and the total number of comments.
 
 ==============================================================================
-6. MAPPINGS                                                 *reviewit-mappings*
+6. MAPPINGS                                                 *reviewthem-mappings*
 
 Default mappings (can be customized in setup):
 
-    <leader>rstart  - Start a review session
-    <leader>rc      - Add a comment (works in normal and visual mode)
-    <leader>rsubmit - Submit review
-    <leader>rabort  - Abort review
-    <leader>rsc     - Show all comments
-    <leader>rmr     - Toggle file reviewed status
-    <leader>rrs     - Show review status
+    <leader>rtstart  - Start a review session
+    <leader>rtc      - Add a comment (works in normal and visual mode)
+    <leader>rtsubmit - Submit review
+    <leader>rtabort  - Abort review
+    <leader>rtsc     - Show all comments
+    <leader>rtmr     - Toggle file reviewed status
+    <leader>rtrs     - Show review status
 
 In the review status window (builtin UI):
     t               - Toggle reviewed status of the file under cursor
@@ -164,7 +164,7 @@ In the review status window (telescope UI):
     <C-t>           - Toggle reviewed status of the selected file
 
 ==============================================================================
-7. CONFIGURATION                                       *reviewit-configuration*
+7. CONFIGURATION                                       *reviewthem-configuration*
 
 Available configuration options:
 
@@ -190,51 +190,51 @@ ui~
     UI provider to use. Options: "builtin" or "telescope".
 
 keymaps~
-    Default: See |reviewit-mappings|
+    Default: See |reviewthem-mappings|
     Table of keymap configurations. Set any to nil to disable.
 
 command_aliases~
-    Default: { review_start = "ris" }
-    Command abbreviations. For example, typing ":ris" expands to ":ReviewitStart".
+    Default: { review_start = "rts" }
+    Command abbreviations. For example, typing ":rts" expands to ":ReviewThemStart".
 
 ==============================================================================
-8. USAGE                                                       *reviewit-usage*
+8. USAGE                                                       *reviewthem-usage*
 
 Basic workflow:
 
 1. Start a review session: >
-    :ReviewitStart main feature-branch
+    :ReviewThemStart main feature-branch
 <
 2. Navigate through the diff using your diff tool (e.g., diffview)
 
 3. Add comments to lines or ranges: >
-    :ReviewitAddComment
-    " or select lines in visual mode and press <leader>rc
+    :ReviewThemAddComment
+    " or select lines in visual mode and press <leader>rtc
 <
 4. Mark files as reviewed: >
-    :ReviewitToggleReviewed
+    :ReviewThemToggleReviewed
 <
 5. Check review progress: >
-    :ReviewitStatus
+    :ReviewThemStatus
 <
 6. Submit your review: >
-    :ReviewitSubmit
+    :ReviewThemSubmit
 <
 
 Example: Reviewing uncommitted changes: >
-    :ReviewitStart
+    :ReviewThemStart
 <
 This compares HEAD with your working directory.
 
 Example: Reviewing a PR: >
-    :ReviewitStart main feature/new-feature
+    :ReviewThemStart main feature/new-feature
 <
 
 ==============================================================================
-9. HEALTH CHECK                                             *reviewit-health*
+9. HEALTH CHECK                                             *reviewthem-health*
 
 Run the health check to diagnose issues: >
-    :checkhealth reviewit
+    :checkhealth reviewthem
 <
 
 This will verify:

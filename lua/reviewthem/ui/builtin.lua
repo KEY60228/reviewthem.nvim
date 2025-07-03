@@ -7,7 +7,7 @@ end
 
 -- Show comments using default Neovim UI
 M.show_comments = function()
-  local state = require("reviewit.state")
+  local state = require("reviewthem.state")
   local all_comments = state.get_comments()
   local lines = {"Review Comments:", ""}
 
@@ -51,7 +51,7 @@ end
 
 -- Show review status using default Neovim UI
 M.show_status = function()
-  local state = require("reviewit.state")
+  local state = require("reviewthem.state")
   local base, compare = state.get_review_branches()
 
   local lines = {

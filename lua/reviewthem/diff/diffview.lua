@@ -9,7 +9,7 @@ end
 -- Start diffview session
 M.start = function(base_ref, compare_ref)
   if not M.is_available() then
-    vim.notify("reviewit.nvim: diffview.nvim not found. Please install sindrets/diffview.nvim", vim.log.levels.ERROR)
+    vim.notify("reviewthem.nvim: diffview.nvim not found. Please install sindrets/diffview.nvim (currently required - more diff tools coming soon!)", vim.log.levels.ERROR)
     return false
   end
 

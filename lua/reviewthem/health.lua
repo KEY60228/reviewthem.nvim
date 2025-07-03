@@ -7,13 +7,13 @@ local warn = health.warn or health.report_warn
 local error = health.error or health.report_error
 
 M.check = function()
-  start("reviewit.nvim")
+  start("reviewthem.nvim")
 
   -- Check Neovim version
   if vim.fn.has("nvim-0.7.0") == 1 then
     ok("Neovim version is 0.7.0 or higher")
   else
-    error("reviewit.nvim requires Neovim 0.7.0 or higher")
+    error("reviewthem.nvim requires Neovim 0.7.0 or higher")
   end
 
   -- Check Git
@@ -29,7 +29,7 @@ M.check = function()
   if vim.v.shell_error == 0 then
     ok("Current directory is inside a Git repository")
   else
-    warn("Not in a Git repository. reviewit.nvim requires a Git repository to function")
+    warn("Not in a Git repository. reviewthem.nvim requires a Git repository to function")
   end
 
   -- Check required dependencies
@@ -51,7 +51,7 @@ M.check = function()
   if has_diffview then
     ok("diffview.nvim is installed")
   else
-    error("diffview.nvim is not installed (required for diff viewing)")
+    error("diffview.nvim is not installed (currently required - more diff tools coming soon!)")
   end
 
   -- Check UI providers
@@ -68,7 +68,7 @@ M.check = function()
   -- Check configuration
   start("Configuration")
 
-  local config = require("reviewit.config")
+  local config = require("reviewthem.config")
   local opts = config.get()
 
   if opts then

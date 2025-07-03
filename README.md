@@ -1,6 +1,6 @@
-# reviewit.nvim
-
 ![ReviewThem Logo](public/logo.png)
+
+# ReviewThem.nvim
 
 A Neovim plugin for streamlining code reviews directly in your editor.
 
@@ -18,7 +18,7 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 
 - Neovim >= 0.7.0
 - Git
-- [diffview.nvim](https://github.com/sindrets/diffview.nvim) (required)
+- [diffview.nvim](https://github.com/sindrets/diffview.nvim) (required for now - more diff tools coming soon!)
 - [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) (optional, for enhanced UI)
 
 ## Installation
@@ -27,13 +27,13 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 
 ```lua
 {
-  "KEY60228/reviewit_nvim",
+  "KEY60228/reviewthem.nvim",
   dependencies = {
     "sindrets/diffview.nvim",
     "nvim-telescope/telescope.nvim", -- optional
   },
   config = function()
-    require("reviewit").setup({
+    require("reviewthem").setup({
       -- your configuration here
     })
   end,
@@ -44,13 +44,13 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 
 ```lua
 use {
-  "KEY60228/reviewit_nvim",
+  "KEY60228/reviewthem.nvim",
   requires = {
     "sindrets/diffview.nvim",
     "nvim-telescope/telescope.nvim", -- optional
   },
   config = function()
-    require("reviewit").setup({
+    require("reviewthem").setup({
       -- your configuration here
     })
   end,
@@ -60,7 +60,7 @@ use {
 ## Configuration
 
 ```lua
-require("reviewit").setup({
+require("reviewthem").setup({
   diff_tool = "diffview",              -- Currently only "diffview" is supported
   comment_sign = "💬",                 -- Sign shown in gutter for comments
   submit_format = "markdown",          -- "markdown" or "json"
@@ -68,15 +68,15 @@ require("reviewit").setup({
   ui = "builtin",                      -- "builtin" or "telescope"
   keymaps = {
     start_review = "<leader>rstart",
-    add_comment = "<leader>rc",
-    submit_review = "<leader>rsubmit",
-    abort_review = "<leader>rabort",
-    show_comments = "<leader>rsc",
-    toggle_reviewed = "<leader>rmr",
-    show_status = "<leader>rrs",
+    add_comment = "<leader>rtc",
+    submit_review = "<leader>rtsubmit",
+    abort_review = "<leader>rtabort",
+    show_comments = "<leader>rtsc",
+    toggle_reviewed = "<leader>rtmr",
+    show_status = "<leader>rtrs",
   },
   command_aliases = {
-    review_start = "ris",              -- :ris expands to :ReviewitStart
+    review_start = "rts",              -- :rts expands to :ReviewThemStart
   },
 })
 ```
@@ -87,40 +87,40 @@ require("reviewit").setup({
 
 1. **Start a review session**
    ```vim
-   :ReviewitStart main feature-branch
+   :ReviewThemStart main feature-branch
    ```
    Or review uncommitted changes:
    ```vim
-   :ReviewitStart
+   :ReviewThemStart
    ```
 
 2. **Navigate and add comments**
    - Use diffview to navigate through changes
-   - Press `<leader>rc` to add a comment on the current line
-   - Select multiple lines in visual mode and press `<leader>rc` for range comments
+   - Press `<leader>rtc` to add a comment on the current line
+   - Select multiple lines in visual mode and press `<leader>rtc` for range comments
 
 3. **Track your progress**
-   - Press `<leader>rmr` to mark the current file as reviewed
-   - Press `<leader>rrs` to see overall review status
+   - Press `<leader>rtmr` to mark the current file as reviewed
+   - Press `<leader>rtrs` to see overall review status
 
 4. **Submit your review**
    ```vim
-   :ReviewitSubmit
+   :ReviewThemSubmit
    ```
 
 ### Commands
 
 | Command | Description |
 |---------|-------------|
-| `:ReviewitStart [base] [compare]` | Start a review session |
-| `:ReviewitAddComment` | Add comment to current line/selection |
-| `:ReviewitSubmit` | Submit all review comments |
-| `:ReviewitAbort` | Abort current review session |
-| `:ReviewitShowComments` | Show all comments |
-| `:ReviewitMarkAsReviewed` | Mark current file as reviewed |
-| `:ReviewitUnmarkAsReviewed` | Unmark current file as reviewed |
-| `:ReviewitToggleReviewed` | Toggle reviewed status |
-| `:ReviewitStatus` | Show review status of all files |
+| `:ReviewThemStart [base] [compare]` | Start a review session |
+| `:ReviewThemAddComment` | Add comment to current line/selection |
+| `:ReviewThemSubmit` | Submit all review comments |
+| `:ReviewThemAbort` | Abort current review session |
+| `:ReviewThemShowComments` | Show all comments |
+| `:ReviewThemMarkAsReviewed` | Mark current file as reviewed |
+| `:ReviewThemUnmarkAsReviewed` | Unmark current file as reviewed |
+| `:ReviewThemToggleReviewed` | Toggle reviewed status |
+| `:ReviewThemStatus` | Show review status of all files |
 
 ### Key Mappings
 
@@ -129,12 +129,12 @@ Default mappings (customizable in setup):
 | Mapping | Mode | Description |
 |---------|------|-------------|
 | `<leader>rstart` | n | Start review |
-| `<leader>rc` | n, v | Add comment |
-| `<leader>rsubmit` | n | Submit review |
-| `<leader>rabort` | n | Abort review |
-| `<leader>rsc` | n | Show comments |
-| `<leader>rmr` | n | Toggle reviewed |
-| `<leader>rrs` | n | Show status |
+| `<leader>rtc` | n, v | Add comment |
+| `<leader>rtsubmit` | n | Submit review |
+| `<leader>rtabort` | n | Abort review |
+| `<leader>rtsc` | n | Show comments |
+| `<leader>rtmr` | n | Toggle reviewed |
+| `<leader>rtrs` | n | Show status |
 
 In the review status window:
 - `t` - Toggle reviewed status (builtin UI)
@@ -143,7 +143,7 @@ In the review status window:
 
 ## Health Check
 
-Run `:checkhealth reviewit` to diagnose any issues with your setup.
+Run `:checkhealth reviewthem` to diagnose any issues with your setup.
 
 ## Example Review Output
 

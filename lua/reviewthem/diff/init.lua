@@ -21,12 +21,12 @@ end
 M.start = function(tool_name, base_branch, compare_branch)
   local tool = diff_tools[tool_name]
   if not tool then
-    vim.notify(string.format("reviewit.nvim: Unknown diff tool '%s'", tool_name), vim.log.levels.ERROR)
+    vim.notify(string.format("reviewthem.nvim: Unknown diff tool '%s'", tool_name), vim.log.levels.ERROR)
     return false
   end
 
   if not tool.start then
-    vim.notify(string.format("reviewit.nvim: Diff tool '%s' does not implement start()", tool_name), vim.log.levels.ERROR)
+    vim.notify(string.format("reviewthem.nvim: Diff tool '%s' does not implement start()", tool_name), vim.log.levels.ERROR)
     return false
   end
 

@@ -1,7 +1,7 @@
 local M = {}
 
 M.setup = function(opts)
-  local config = require("reviewit.config")
+  local config = require("reviewthem.config")
   config.setup(opts)
 end
 

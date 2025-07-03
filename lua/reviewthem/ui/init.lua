@@ -21,12 +21,12 @@ end
 M.show_comments = function(ui_name)
   local provider = ui_providers[ui_name]
   if not provider then
-    vim.notify(string.format("reviewit.nvim: Unknown UI provider '%s'", ui_name), vim.log.levels.ERROR)
+    vim.notify(string.format("reviewthem.nvim: Unknown UI provider '%s'", ui_name), vim.log.levels.ERROR)
     return false
   end
 
   if not provider.show_comments then
-    vim.notify(string.format("reviewit.nvim: UI provider '%s' does not implement show_comments()", ui_name), vim.log.levels.ERROR)
+    vim.notify(string.format("reviewthem.nvim: UI provider '%s' does not implement show_comments()", ui_name), vim.log.levels.ERROR)
     return false
   end
 
@@ -37,12 +37,12 @@ end
 M.show_status = function(ui_name)
   local provider = ui_providers[ui_name]
   if not provider then
-    vim.notify(string.format("reviewit.nvim: Unknown UI provider '%s'", ui_name), vim.log.levels.ERROR)
+    vim.notify(string.format("reviewthem.nvim: Unknown UI provider '%s'", ui_name), vim.log.levels.ERROR)
     return false
   end
 
   if not provider.show_status then
-    vim.notify(string.format("reviewit.nvim: UI provider '%s' does not implement show_status()", ui_name), vim.log.levels.ERROR)
+    vim.notify(string.format("reviewthem.nvim: UI provider '%s' does not implement show_status()", ui_name), vim.log.levels.ERROR)
     return false
   end
 
