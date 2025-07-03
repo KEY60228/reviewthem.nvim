@@ -5,6 +5,7 @@ local state = {
   compare_branch = nil,
   diff_files = {},
   comments = {},
+  reviewed_files = {},
   current_diff_tool = nil,
 }
 
@@ -39,6 +40,22 @@ end
 
 M.clear_comments = function()
   state.comments = {}
+end
+
+M.mark_file_reviewed = function(file)
+  state.reviewed_files[file] = true
+end
+
+M.unmark_file_reviewed = function(file)
+  state.reviewed_files[file] = nil
+end
+
+M.is_file_reviewed = function(file)
+  return state.reviewed_files[file] == true
+end
+
+M.clear_reviewed_files = function()
+  state.reviewed_files = {}
 end
 
 M.set_current_diff_tool = function(tool)

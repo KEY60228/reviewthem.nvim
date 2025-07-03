@@ -3,6 +3,7 @@ local M = {}
 M.setup = function()
   local review = require("reviewit.commands.review")
   local comments = require("reviewit.commands.comments")
+  local files = require("reviewit.commands.files")
 
   vim.api.nvim_create_user_command("ReviewitStart", function(args)
     local base_branch = args.fargs[1]
@@ -36,6 +37,24 @@ M.setup = function()
     comments.show_comments()
   end, {
       desc = "Show all review comments",
+    })
+
+  vim.api.nvim_create_user_command("ReviewitMarkAsReviewed", function()
+    files.mark_current_file_reviewed()
+  end, {
+      desc = "Mark current file as reviewed",
+    })
+
+  vim.api.nvim_create_user_command("ReviewitUnmarkAsReviewed", function()
+    files.unmark_current_file_reviewed()
+  end, {
+      desc = "Unmark current file as reviewed",
+    })
+
+  vim.api.nvim_create_user_command("ReviewitToggleReviewed", function()
+    files.toggle_current_file_reviewed()
+  end, {
+      desc = "Toggle reviewed status of current file",
     })
 end
 
