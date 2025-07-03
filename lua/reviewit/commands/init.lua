@@ -1,6 +1,7 @@
 local M = {}
 
 M.setup = function()
+  local config = require("reviewit.config")
   local review = require("reviewit.commands.review")
   local comments = require("reviewit.commands.comments")
   local files = require("reviewit.commands.files")
@@ -14,6 +15,11 @@ M.setup = function()
       desc = "Start a code review between two branches",
     })
 
+  -- Create command abbreviation from config
+  local opts = config.get()
+  if opts.command_aliases and opts.command_aliases.review_start then
+    vim.cmd(string.format("cnoreabbrev %s ReviewitStart", opts.command_aliases.review_start))
+  end
 
   vim.api.nvim_create_user_command("ReviewitAddComment", function(args)
     if args.range == 2 then

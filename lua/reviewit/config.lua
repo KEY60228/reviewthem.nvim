@@ -6,6 +6,18 @@ M.defaults = {
   submit_format = "markdown",  -- "markdown" or "json"
   submit_destination = "clipboard",  -- "clipboard" or file path relative to project root
   ui = "builtin",  -- "builtin" or "telescope"
+  keymaps = {
+    start_review = "<leader>rstart",
+    add_comment = "<leader>rc",
+    submit_review = "<leader>rsubmit",
+    abort_review = "<leader>rabort",
+    show_comments = "<leader>rsc",
+    toggle_reviewed = "<leader>rmr",
+    show_status = "<leader>rrs",
+  },
+  command_aliases = {
+    review_start = "ris",  -- Alias for ReviewitStart
+  },
 }
 
 M.options = {}

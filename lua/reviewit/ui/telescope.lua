@@ -79,11 +79,6 @@ M.show_status = function()
   local action_state = require("telescope.actions.state")
 
   local base, compare = state.get_review_branches()
-  if not base then
-    vim.notify("No review session is active. Use :ReviewitStart to begin a review.", vim.log.levels.WARN)
-    return
-  end
-
   local files = state.get_diff_files()
   if #files == 0 then
     vim.notify("No files in the current review session.", vim.log.levels.INFO)
@@ -101,7 +96,6 @@ M.show_status = function()
       reviewed = reviewed,
     })
   end
-
 
   pickers.new({}, {
     prompt_title = string.format("Review Status: %s...%s", base, compare or "Working Directory"),
