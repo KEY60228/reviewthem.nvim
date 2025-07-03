@@ -5,6 +5,10 @@ local git = require("reviewit.git")
 
 -- Single line comment (Normal mode)
 M.add_comment = function()
+  if not state.ensure_review_active() then
+    return
+  end
+
   local absolute_path = vim.fn.expand("%:p")
   local file = git.get_relative_path(absolute_path)
   local line = vim.fn.line(".")
@@ -26,6 +30,10 @@ end
 
 -- Range comment (Visual mode or command line range)
 M.add_comment_with_range = function(line_start, line_end)
+  if not state.ensure_review_active() then
+    return
+  end
+
   local absolute_path = vim.fn.expand("%:p")
   local file = git.get_relative_path(absolute_path)
 
@@ -88,6 +96,10 @@ M._create_success_message = function(file, line_start, line_end)
 end
 
 M.show_comments = function()
+  if not state.ensure_review_active() then
+    return
+  end
+
   local opts = config.get()
   local ui = require("reviewit.ui")
   ui.show_comments(opts.ui)

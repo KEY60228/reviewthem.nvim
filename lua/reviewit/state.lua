@@ -1,6 +1,7 @@
 local M = {}
 
 local state = {
+  is_in_review = false,
   base_branch = nil,
   compare_branch = nil,
   diff_files = {},
@@ -96,6 +97,30 @@ M.get_all_comments_structured = function()
   end
 
   return structured
+end
+
+-- Start a review session
+M.start_review_session = function()
+  state.is_in_review = true
+end
+
+-- End a review session
+M.end_review_session = function()
+  state.is_in_review = false
+end
+
+-- Check if a review session is active
+M.is_review_active = function()
+  return state.is_in_review
+end
+
+-- Ensure review session is active, show error if not
+M.ensure_review_active = function()
+  if not M.is_review_active() then
+    vim.notify("No review session is active. Use :ReviewitStart to begin a review.", vim.log.levels.ERROR)
+    return false
+  end
+  return true
 end
 
 return M

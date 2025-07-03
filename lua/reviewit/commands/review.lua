@@ -16,11 +16,14 @@ M.start = function(base_ref, compare_ref)
     return
   end
 
+  -- Start the review session
+  state.start_review_session()
   state.set_review_branches(base_ref, compare_ref)
 
   local diff_results = git.get_diff_files(base_ref, compare_ref)
   if #diff_results == 0 then
     vim.notify("reviewit.nvim: No differences found", vim.log.levels.INFO)
+    state.end_review_session()  -- End session if no diffs
     return
   end
 
@@ -40,10 +43,17 @@ M.start = function(base_ref, compare_ref)
   local success = diff.start(opts.diff_tool, base_ref, compare_ref)
   if not success then
     vim.notify("reviewit.nvim: Failed to start diff tool", vim.log.levels.ERROR)
+    state.end_review_session()  -- End session if diff tool fails
+  else
+    vim.notify(string.format("Review session started: %s...%s", base_ref, compare_ref or "Working Directory"), vim.log.levels.INFO)
   end
 end
 
 M.submit = function()
+  if not state.ensure_review_active() then
+    return
+  end
+
   local structured = state.get_all_comments_structured()
 
   if #structured.review.comments == 0 then
@@ -121,6 +131,9 @@ M.submit = function()
     diff.close(current_tool)
   end
 
+  -- End the review session
+  state.end_review_session()
+
   vim.notify("Review completed", vim.log.levels.INFO)
 end
 
@@ -162,6 +175,10 @@ M.format_as_markdown = function(structured)
 end
 
 M.abort = function()
+  if not state.ensure_review_active() then
+    return
+  end
+
   -- Confirm if there are unsaved comments
   local all_comments = state.get_comments()
   local comment_count = 0
@@ -196,6 +213,9 @@ M.abort = function()
     diff.close(current_tool)
     state.set_current_diff_tool(nil)
   end
+
+  -- End the review session
+  state.end_review_session()
 
   vim.notify("Review session aborted", vim.log.levels.INFO)
 end

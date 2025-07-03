@@ -4,6 +4,10 @@ local git = require("reviewit.git")
 local config = require("reviewit.config")
 
 M.mark_current_file_reviewed = function()
+  if not state.ensure_review_active() then
+    return
+  end
+
   local absolute_path = vim.fn.expand("%:p")
   local file = git.get_relative_path(absolute_path)
 
@@ -16,6 +20,10 @@ M.mark_current_file_reviewed = function()
 end
 
 M.unmark_current_file_reviewed = function()
+  if not state.ensure_review_active() then
+    return
+  end
+
   local absolute_path = vim.fn.expand("%:p")
   local file = git.get_relative_path(absolute_path)
 
@@ -28,6 +36,10 @@ M.unmark_current_file_reviewed = function()
 end
 
 M.toggle_current_file_reviewed = function()
+  if not state.ensure_review_active() then
+    return
+  end
+
   local absolute_path = vim.fn.expand("%:p")
   local file = git.get_relative_path(absolute_path)
 
@@ -59,6 +71,10 @@ M._update_signs = function()
 end
 
 M.show_review_status = function()
+  if not state.ensure_review_active() then
+    return
+  end
+
   local opts = config.get()
   local ui = require("reviewit.ui")
   ui.show_status(opts.ui)
