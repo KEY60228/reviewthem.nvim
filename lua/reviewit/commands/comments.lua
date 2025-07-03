@@ -87,5 +87,11 @@ M._create_success_message = function(file, line_start, line_end)
   end
 end
 
+M.show_comments = function()
+  local opts = config.get()
+  local ui = require("reviewit.ui")
+  ui.show_comments(opts.ui)
+end
+
 return M
 

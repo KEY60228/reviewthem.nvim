@@ -31,6 +31,12 @@ M.setup = function()
   end, {
       desc = "Submit review comments",
     })
+
+  vim.api.nvim_create_user_command("ReviewitShowComments", function()
+    comments.show_comments()
+  end, {
+      desc = "Show all review comments",
+    })
 end
 
 return M

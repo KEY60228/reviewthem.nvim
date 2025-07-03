@@ -5,6 +5,7 @@ M.defaults = {
   comment_sign = "💬",
   submit_format = "markdown",  -- "markdown" or "json"
   submit_destination = "clipboard",  -- "clipboard" or file path relative to project root
+  ui = "builtin",  -- "builtin" or "telescope"
 }
 
 M.options = {}
@@ -26,6 +27,23 @@ M.setup = function(opts)
   if not diff.is_available(M.options.diff_tool) then
     vim.notify(string.format("reviewit.nvim: Diff tool '%s' not available. Falling back to 'diffview'.", M.options.diff_tool), vim.log.levels.WARN)
     M.options.diff_tool = "diffview"
+  end
+
+  -- Validate UI option
+  if type(M.options.ui) ~= "string" then
+    vim.notify("reviewit.nvim: ui option must be a string. Using default 'builtin'.", vim.log.levels.WARN)
+    M.options.ui = "builtin"
+  end
+
+  -- Register UI providers
+  local ui = require("reviewit.ui")
+  ui.register("builtin", require("reviewit.ui.builtin"))
+  ui.register("telescope", require("reviewit.ui.telescope"))
+
+  -- Check if configured UI is available
+  if not ui.is_available(M.options.ui) then
+    vim.notify(string.format("reviewit.nvim: UI '%s' not available. Falling back to builtin.", M.options.ui), vim.log.levels.WARN)
+    M.options.ui = "builtin"
   end
 end
 
