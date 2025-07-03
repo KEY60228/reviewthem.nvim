@@ -2,6 +2,7 @@ local M = {}
 
 M.setup = function()
   local review = require("reviewit.commands.review")
+  local comments = require("reviewit.commands.comments")
 
   vim.api.nvim_create_user_command("ReviewitStart", function(args)
     local base_branch = args.fargs[1]
@@ -10,6 +11,19 @@ M.setup = function()
   end, {
       nargs = "*",
       desc = "Start a code review between two branches",
+    })
+
+  vim.api.nvim_create_user_command("ReviewitAddComment", function(args)
+    if args.range == 2 then
+      -- Range specified (Visual mode or :<range>ReviewitAddComment)
+      comments.add_comment_with_range(args.line1, args.line2)
+    else
+      -- No range (Normal mode)
+      comments.add_comment()
+    end
+  end, {
+      desc = "Add a comment to the current line or selection",
+      range = true,
     })
 end
 

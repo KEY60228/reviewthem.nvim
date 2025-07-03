@@ -59,4 +59,44 @@ M.is_valid_ref = function(ref)
   return vim.v.shell_error == 0
 end
 
+M.get_git_root = function()
+  local result = vim.fn.system("git rev-parse --show-toplevel")
+  if vim.v.shell_error ~= 0 then
+    return nil
+  end
+  return vim.trim(result)
+end
+
+M.get_relative_path = function(absolute_path)
+  -- Handle diffview URIs
+  if absolute_path:match("^diffview://") then
+    -- Extract the actual file path from diffview URI
+    -- Format: diffview:///path/to/repo/.git/commit_hash/relative/path/to/file
+    local git_root = M.get_git_root()
+    if git_root then
+      -- Find the .git directory position and extract the path after it
+      local pattern = vim.pesc(git_root) .. "/.git/[^/]+/"
+      local relative = absolute_path:gsub("^diffview://", ""):gsub(pattern, "")
+      return relative
+    end
+  end
+
+  local git_root = M.get_git_root()
+  if not git_root then
+    return absolute_path
+  end
+
+  -- Get the relative path from git root
+  local cmd = string.format("git -C %s ls-files --full-name %s", git_root, vim.fn.shellescape(absolute_path))
+  local result = vim.fn.system(cmd)
+
+  if vim.v.shell_error == 0 and result ~= "" then
+    return vim.trim(result)
+  end
+
+  -- If the file is not tracked, calculate relative path manually
+  local relative = absolute_path:gsub("^" .. vim.pesc(git_root) .. "/", "")
+  return relative
+end
+
 return M

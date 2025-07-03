@@ -2,6 +2,7 @@ local M = {}
 
 M.defaults = {
   diff_tool = "diffview",  -- Currently only "diffview" is supported. More tools will be added in the future.
+  comment_sign = "💬",
 }
 
 M.options = {}
