@@ -1,0 +1,248 @@
+*reviewit.txt*	A Neovim plugin for streamlining code reviews
+
+Author:  Kenta Yamaguchi
+License: MIT
+
+==============================================================================
+CONTENTS                                                    *reviewit-contents*
+
+    1. Introduction ......................... |reviewit-introduction|
+    2. Requirements ......................... |reviewit-requirements|
+    3. Installation ......................... |reviewit-installation|
+    4. Setup ................................ |reviewit-setup|
+    5. Commands ............................. |reviewit-commands|
+    6. Mappings ............................. |reviewit-mappings|
+    7. Configuration ........................ |reviewit-configuration|
+    8. Usage ................................ |reviewit-usage|
+    9. Health Check ......................... |reviewit-health|
+
+==============================================================================
+1. INTRODUCTION                                         *reviewit-introduction*
+
+reviewit.nvim is a Neovim plugin designed to streamline code reviews within
+your editor. It allows you to:
+
+- Start review sessions between branches or commits
+- Add comments to specific lines or ranges
+- Mark files as reviewed
+- View review status and progress
+- Export review comments in various formats
+
+==============================================================================
+2. REQUIREMENTS                                         *reviewit-requirements*
+
+- Neovim >= 0.7.0
+- Git
+- diffview.nvim (required)
+- telescope.nvim (optional, for enhanced UI)
+- plenary.nvim (optional, recommended)
+
+==============================================================================
+3. INSTALLATION                                         *reviewit-installation*
+
+Using lazy.nvim: >lua
+
+    {
+      "KEY60228/reviewit_nvim",
+      dependencies = {
+        "sindrets/diffview.nvim",
+        "nvim-telescope/telescope.nvim", -- optional
+      },
+      config = function()
+        require("reviewit").setup({
+          -- your configuration
+        })
+      end,
+    }
+<
+
+Using packer.nvim: >lua
+
+    use {
+      "KEY60228/reviewit_nvim",
+      requires = {
+        "sindrets/diffview.nvim",
+        "nvim-telescope/telescope.nvim", -- optional
+      },
+      config = function()
+        require("reviewit").setup({
+          -- your configuration
+        })
+      end,
+    }
+<
+
+==============================================================================
+4. SETUP                                                       *reviewit-setup*
+
+Call the setup function with your configuration: >lua
+
+    require("reviewit").setup({
+      diff_tool = "diffview",
+      comment_sign = "💬",
+      submit_format = "markdown",
+      submit_destination = "clipboard",
+      ui = "telescope", -- or "builtin"
+      keymaps = {
+        start_review = "<leader>rstart",
+        add_comment = "<leader>rc",
+        submit_review = "<leader>rsubmit",
+        abort_review = "<leader>rabort",
+        show_comments = "<leader>rsc",
+        toggle_reviewed = "<leader>rmr",
+        show_status = "<leader>rrs",
+      },
+    })
+<
+
+==============================================================================
+5. COMMANDS                                                 *reviewit-commands*
+
+                                                            *:ReviewitStart*
+:ReviewitStart [{base}] [{compare}]
+    Start a review session. If no arguments provided, compares HEAD with
+    working directory. If only {base} provided, compares {base} with working
+    directory. If both provided, compares {base} with {compare}.
+
+                                                        *:ReviewitAddComment*
+:ReviewitAddComment
+    Add a comment to the current line. In visual mode, adds comment to the
+    selected range.
+
+:[range]ReviewitAddComment
+    Add a comment to the specified line range.
+
+                                                           *:ReviewitSubmit*
+:ReviewitSubmit
+    Submit all review comments. Output format and destination are determined
+    by configuration.
+
+                                                            *:ReviewitAbort*
+:ReviewitAbort
+    Abort the current review session. Prompts for confirmation if there are
+    unsaved comments.
+
+                                                      *:ReviewitShowComments*
+:ReviewitShowComments
+    Display all comments for the current review session.
+
+                                                   *:ReviewitMarkAsReviewed*
+:ReviewitMarkAsReviewed
+    Mark the current file as reviewed.
+
+                                                 *:ReviewitUnmarkAsReviewed*
+:ReviewitUnmarkAsReviewed
+    Unmark the current file as reviewed.
+
+                                                   *:ReviewitToggleReviewed*
+:ReviewitToggleReviewed
+    Toggle the reviewed status of the current file.
+
+                                                           *:ReviewitStatus*
+:ReviewitStatus
+    Show the review status of all files, including which files have been
+    reviewed and the total number of comments.
+
+==============================================================================
+6. MAPPINGS                                                 *reviewit-mappings*
+
+Default mappings (can be customized in setup):
+
+    <leader>rstart  - Start a review session
+    <leader>rc      - Add a comment (works in normal and visual mode)
+    <leader>rsubmit - Submit review
+    <leader>rabort  - Abort review
+    <leader>rsc     - Show all comments
+    <leader>rmr     - Toggle file reviewed status
+    <leader>rrs     - Show review status
+
+In the review status window (builtin UI):
+    t               - Toggle reviewed status of the file under cursor
+    q or <Esc>      - Close the window
+
+In the review status window (telescope UI):
+    <C-t>           - Toggle reviewed status of the selected file
+
+==============================================================================
+7. CONFIGURATION                                       *reviewit-configuration*
+
+Available configuration options:
+
+diff_tool~
+    Default: "diffview"
+    The diff tool to use. Currently only "diffview" is supported.
+
+comment_sign~
+    Default: "💬"
+    The sign to display in the gutter for lines with comments.
+
+submit_format~
+    Default: "markdown"
+    Format for submitted reviews. Options: "markdown" or "json".
+
+submit_destination~
+    Default: "clipboard"
+    Where to send the review output. Options: "clipboard" or a file path
+    relative to the project root.
+
+ui~
+    Default: "builtin"
+    UI provider to use. Options: "builtin" or "telescope".
+
+keymaps~
+    Default: See |reviewit-mappings|
+    Table of keymap configurations. Set any to nil to disable.
+
+command_aliases~
+    Default: { review_start = "ris" }
+    Command abbreviations. For example, typing ":ris" expands to ":ReviewitStart".
+
+==============================================================================
+8. USAGE                                                       *reviewit-usage*
+
+Basic workflow:
+
+1. Start a review session: >
+    :ReviewitStart main feature-branch
+<
+2. Navigate through the diff using your diff tool (e.g., diffview)
+
+3. Add comments to lines or ranges: >
+    :ReviewitAddComment
+    " or select lines in visual mode and press <leader>rc
+<
+4. Mark files as reviewed: >
+    :ReviewitToggleReviewed
+<
+5. Check review progress: >
+    :ReviewitStatus
+<
+6. Submit your review: >
+    :ReviewitSubmit
+<
+
+Example: Reviewing uncommitted changes: >
+    :ReviewitStart
+<
+This compares HEAD with your working directory.
+
+Example: Reviewing a PR: >
+    :ReviewitStart main feature/new-feature
+<
+
+==============================================================================
+9. HEALTH CHECK                                             *reviewit-health*
+
+Run the health check to diagnose issues: >
+    :checkhealth reviewit
+<
+
+This will verify:
+- Neovim version compatibility
+- Git installation
+- Required and optional dependencies
+- Configuration validity
+- Clipboard support
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
