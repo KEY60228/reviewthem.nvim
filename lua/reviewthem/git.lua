@@ -1,27 +1,49 @@
 local M = {}
 
 M.get_diff_files = function(base_ref, compare_ref)
-  local cmd
+  local files = {}
 
   -- Handle different types of references
   if compare_ref == nil or compare_ref == "" then
-    -- All uncommitted changes (both staged and unstaged) against base_ref
-    cmd = string.format("git diff --name-status %s", base_ref)
+    -- Get tracked files with changes (both staged and unstaged) against base_ref
+    local cmd = string.format("git diff --name-status %s", base_ref)
+    local result = vim.fn.systemlist(cmd)
+    
+    for _, line in ipairs(result) do
+      local status, file = line:match("^(%S+)%s+(.+)$")
+      if status and file then
+        table.insert(files, {
+          status = status,
+          file = file,
+        })
+      end
+    end
+    
+    -- Also get untracked files
+    local untracked_cmd = "git ls-files --others --exclude-standard"
+    local untracked_result = vim.fn.systemlist(untracked_cmd)
+    
+    for _, file in ipairs(untracked_result) do
+      if file ~= "" then
+        table.insert(files, {
+          status = "A",  -- Mark untracked files as Added
+          file = file,
+        })
+      end
+    end
   else
     -- Normal branch/commit comparison
-    cmd = string.format("git diff --name-status %s...%s", base_ref, compare_ref)
-  end
-
-  local result = vim.fn.systemlist(cmd)
-
-  local files = {}
-  for _, line in ipairs(result) do
-    local status, file = line:match("^(%S+)%s+(.+)$")
-    if status and file then
-      table.insert(files, {
-        status = status,
-        file = file,
-      })
+    local cmd = string.format("git diff --name-status %s...%s", base_ref, compare_ref)
+    local result = vim.fn.systemlist(cmd)
+    
+    for _, line in ipairs(result) do
+      local status, file = line:match("^(%S+)%s+(.+)$")
+      if status and file then
+        table.insert(files, {
+          status = status,
+          file = file,
+        })
+      end
     end
   end
 

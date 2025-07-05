@@ -16,7 +16,15 @@ M.start = function(base_ref, compare_ref)
   local cmd
   if compare_ref == nil or compare_ref == "" then
     -- Compare with working directory (all uncommitted changes)
-    cmd = string.format("DiffviewOpen %s", base_ref)
+    -- When no compare_ref is given, show all changes including untracked files
+    -- by not specifying any refs (this shows working tree changes)
+    if base_ref == "HEAD" then
+      -- Show all working tree changes including untracked files
+      cmd = "DiffviewOpen"
+    else
+      -- Compare against a specific ref
+      cmd = string.format("DiffviewOpen %s", base_ref)
+    end
   else
     -- Normal comparison
     cmd = string.format("DiffviewOpen %s...%s", base_ref, compare_ref)
