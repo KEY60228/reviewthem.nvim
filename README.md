@@ -18,7 +18,9 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 
 - Neovim >= 0.7.0
 - Git
-- [diffview.nvim](https://github.com/sindrets/diffview.nvim) (required for now - more diff tools coming soon!)
+- At least one of the following diff tools:
+  - [diffview.nvim](https://github.com/sindrets/diffview.nvim) (optional)
+  - [alt-diffview](https://github.com/KEY60228/alt-diffview) (optional)
 - [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) (optional, for enhanced UI)
 
 ## Installation
@@ -29,7 +31,8 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 {
   "KEY60228/reviewthem.nvim",
   dependencies = {
-    "sindrets/diffview.nvim",
+    "sindrets/diffview.nvim", -- optional (need at least one diff tool)
+    "KEY60228/alt-diffview", -- alternative diff tool
     "nvim-telescope/telescope.nvim", -- optional
   },
   config = function()
@@ -46,7 +49,8 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 use {
   "KEY60228/reviewthem.nvim",
   requires = {
-    "sindrets/diffview.nvim",
+    "sindrets/diffview.nvim", -- optional (need at least one diff tool)
+    "KEY60228/alt-diffview", -- alternative diff tool
     "nvim-telescope/telescope.nvim", -- optional
   },
   config = function()
@@ -61,7 +65,7 @@ use {
 
 ```lua
 require("reviewthem").setup({
-  diff_tool = "diffview",              -- Currently only "diffview" is supported
+  diff_tool = "diffview",              -- "diffview" or "alt-diffview"
   comment_sign = "💬",                 -- Sign shown in gutter for comments
   submit_format = "markdown",          -- "markdown" or "json"
   submit_destination = "clipboard",    -- "clipboard" or file path
@@ -80,6 +84,16 @@ require("reviewthem").setup({
   },
 })
 ```
+
+### Diff Tool Selection
+
+When comparing a specific ref with the working tree (e.g., `:ReviewThemStart main`), we recommend using **alt-diffview** as your diff tool:
+
+```lua
+diff_tool = "alt-diffview",
+```
+
+This is because diffview.nvim may not properly display untracked files when comparing with the working tree. alt-diffview handles this scenario more reliably.
 
 ## Usage
 

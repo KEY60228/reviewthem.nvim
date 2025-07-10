@@ -1,7 +1,7 @@
 local M = {}
 
 M.defaults = {
-  diff_tool = "diffview",  -- Currently only "diffview" is supported. More tools will be added soon!
+  diff_tool = "diffview",  -- "diffview" or "alt-diffview"
   comment_sign = "💬",
   submit_format = "markdown",  -- "markdown" or "json"
   submit_destination = "clipboard",  -- "clipboard" or file path relative to project root
@@ -34,6 +34,7 @@ M.setup = function(opts)
   -- Register diff tools
   local diff = require("reviewthem.diff")
   diff.register("diffview", require("reviewthem.diff.diffview"))
+  diff.register("alt-diffview", require("reviewthem.diff.alt-diffview"))
 
   -- Check if configured diff tools is available
   if not diff.is_available(M.options.diff_tool) then
