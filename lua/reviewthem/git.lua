@@ -1,27 +1,55 @@
 local M = {}
 
 M.get_diff_files = function(base_ref, compare_ref)
-  local cmd
+  local files = {}
 
   -- Handle different types of references
   if compare_ref == nil or compare_ref == "" then
     -- All uncommitted changes (both staged and unstaged) against base_ref
-    cmd = string.format("git diff --name-status %s", base_ref)
+    local cmd
+    if base_ref == nil or base_ref == "" then
+      -- No base ref means compare index with working directory
+      cmd = "git diff --name-status"
+    else
+      cmd = string.format("git diff --name-status %s", base_ref)
+    end
+    local result = vim.fn.systemlist(cmd)
+
+    -- Get tracked file changes
+    for _, line in ipairs(result) do
+      local status, file = line:match("^(%S+)%s+(.+)$")
+      if status and file then
+        table.insert(files, {
+          status = status,
+          file = file,
+        })
+      end
+    end
+
+    -- Get untracked files
+    local untracked_cmd = "git ls-files --others --exclude-standard"
+    local untracked_result = vim.fn.systemlist(untracked_cmd)
+    for _, file in ipairs(untracked_result) do
+      if file ~= "" then
+        table.insert(files, {
+          status = "A", -- Show untracked files as added
+          file = file,
+        })
+      end
+    end
   else
     -- Normal branch/commit comparison
-    cmd = string.format("git diff --name-status %s...%s", base_ref, compare_ref)
-  end
+    local cmd = string.format("git diff --name-status %s...%s", base_ref, compare_ref)
+    local result = vim.fn.systemlist(cmd)
 
-  local result = vim.fn.systemlist(cmd)
-
-  local files = {}
-  for _, line in ipairs(result) do
-    local status, file = line:match("^(%S+)%s+(.+)$")
-    if status and file then
-      table.insert(files, {
-        status = status,
-        file = file,
-      })
+    for _, line in ipairs(result) do
+      local status, file = line:match("^(%S+)%s+(.+)$")
+      if status and file then
+        table.insert(files, {
+          status = status,
+          file = file,
+        })
+      end
     end
   end
 
@@ -29,6 +57,11 @@ M.get_diff_files = function(base_ref, compare_ref)
 end
 
 M.validate_references = function(base_ref, compare_ref)
+  -- If both are empty, that's valid (comparing working directory with index)
+  if (base_ref == nil or base_ref == "") and (compare_ref == nil or compare_ref == "") then
+    return true, nil
+  end
+
   if compare_ref == nil or compare_ref == "" then
     -- Comparing with working directory
     local valid = M.is_valid_ref(base_ref)
