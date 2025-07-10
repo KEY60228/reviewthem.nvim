@@ -51,7 +51,20 @@ M.check = function()
   if has_diffview then
     ok("diffview.nvim is installed")
   else
-    error("diffview.nvim is not installed (currently required - more diff tools coming soon!)")
+    warn("diffview.nvim is not installed")
+  end
+
+  -- Check alt-diffview.nvim
+  local has_alt_diffview = pcall(require, "alt-diffview")
+  if has_alt_diffview then
+    ok("alt-diffview.nvim is installed")
+  else
+    warn("alt-diffview.nvim is not installed")
+  end
+
+  -- At least one diff tool should be available
+  if not has_diffview and not has_alt_diffview then
+    error("No diff tools available. Please install either sindrets/diffview.nvim or KEY60228/alt-diffview.nvim")
   end
 
   -- Check UI providers
@@ -84,6 +97,8 @@ M.check = function()
     -- Check diff tool setting
     if opts.diff_tool == "diffview" and not has_diffview then
       error("Diff tool is set to 'diffview' but diffview.nvim is not installed")
+    elseif opts.diff_tool == "alt-diffview" and not has_alt_diffview then
+      error("Diff tool is set to 'alt-diffview' but alt-diffview.nvim is not installed")
     else
       ok(string.format("Diff tool: %s", opts.diff_tool))
     end

@@ -33,7 +33,9 @@ your editor. It allows you to:
 
 - Neovim >= 0.7.0
 - Git
-- diffview.nvim (required for now - more diff tools coming soon!)
+- At least one of the following diff tools:
+  - diffview.nvim (optional)
+  - alt-diffview (optional)
 - telescope.nvim (optional, for enhanced UI)
 - plenary.nvim (optional, recommended)
 
@@ -45,7 +47,8 @@ Using lazy.nvim: >lua
     {
       "KEY60228/reviewthem.nvim",
       dependencies = {
-        "sindrets/diffview.nvim",
+        "sindrets/diffview.nvim", -- optional (need at least one diff tool)
+        "KEY60228/alt-diffview", -- alternative diff tool
         "nvim-telescope/telescope.nvim", -- optional
       },
       config = function()
@@ -61,7 +64,8 @@ Using packer.nvim: >lua
     use {
       "KEY60228/reviewthem.nvim",
       requires = {
-        "sindrets/diffview.nvim",
+        "sindrets/diffview.nvim", -- optional (need at least one diff tool)
+        "KEY60228/alt-diffview", -- alternative diff tool
         "nvim-telescope/telescope.nvim", -- optional
       },
       config = function()
@@ -170,7 +174,12 @@ Available configuration options:
 
 diff_tool~
     Default: "diffview"
-    The diff tool to use. Currently only "diffview" is supported.
+    The diff tool to use. Options: "diffview" or "alt-diffview".
+
+    Note: When comparing a specific ref with the working tree (e.g.,
+    :ReviewThemStart main), we recommend using "alt-diffview" as it handles
+    untracked files more reliably in this scenario. diffview.nvim may not
+    properly display untracked files when comparing with the working tree.
 
 comment_sign~
     Default: "💬"

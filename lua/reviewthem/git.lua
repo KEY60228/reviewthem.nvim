@@ -101,17 +101,11 @@ M.get_git_root = function()
 end
 
 M.get_relative_path = function(absolute_path)
-  -- Handle diffview URIs
-  if absolute_path:match("^diffview://") then
-    -- Extract the actual file path from diffview URI
-    -- Format: diffview:///path/to/repo/.git/commit_hash/relative/path/to/file
-    local git_root = M.get_git_root()
-    if git_root then
-      -- Find the .git directory position and extract the path after it
-      local pattern = vim.pesc(git_root) .. "/.git/[^/]+/"
-      local relative = absolute_path:gsub("^diffview://", ""):gsub(pattern, "")
-      return relative
-    end
+  -- Try to extract from diff tool URI first
+  local diff = require("reviewthem.diff")
+  local relative_from_uri = diff.extract_relative_path(absolute_path)
+  if relative_from_uri then
+    return relative_from_uri
   end
 
   local git_root = M.get_git_root()
