@@ -15,8 +15,11 @@ M.start = function(base_ref, compare_ref)
 
   local cmd
   if compare_ref == nil or compare_ref == "" then
-    -- Compare with working directory (all uncommitted changes)
-    cmd = string.format("DiffviewOpen %s", base_ref)
+    if base_ref == nil or base_ref == "" then
+      cmd = "DiffviewOpen"
+    else
+      cmd = string.format("DiffviewOpen %s", base_ref)
+    end
   else
     -- Normal comparison
     cmd = string.format("DiffviewOpen %s...%s", base_ref, compare_ref)

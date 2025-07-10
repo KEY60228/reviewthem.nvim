@@ -3,13 +3,9 @@ local git = require("reviewthem.git")
 local config = require("reviewthem.config")
 local state = require("reviewthem.state")
 
+-- If no base_ref, use HEAD (current branch)
+-- If no compare_ref, compare with working directory (all uncommitted changes)
 M.start = function(base_ref, compare_ref)
-  -- If no base_ref, use HEAD (current branch)
-  -- If no compare_ref, compare with working directory (all uncommitted changes)
-  if base_ref == nil or base_ref == "" then
-    base_ref = "HEAD"
-  end
-
   local valid, err = git.validate_references(base_ref, compare_ref)
   if not valid then
     vim.notify("reviewthem.nvim: " .. err, vim.log.levels.ERROR)
@@ -45,7 +41,15 @@ M.start = function(base_ref, compare_ref)
     vim.notify("reviewthem.nvim: Failed to start diff tool", vim.log.levels.ERROR)
     state.end_review_session()  -- End session if diff tool fails
   else
-    vim.notify(string.format("Review session started: %s...%s", base_ref, compare_ref or "Working Directory"), vim.log.levels.INFO)
+    local msg
+    if (base_ref == nil or base_ref == "") and (compare_ref == nil or compare_ref == "") then
+      msg = "Review session started: HEAD...Working Directory"
+    elseif compare_ref == nil or compare_ref == "" then
+      msg = string.format("Review session started: %s..Working Directory", base_ref)
+    else
+      msg = string.format("Review session started: %s...%s", base_ref, compare_ref)
+    end
+    vim.notify(msg, vim.log.levels.INFO)
   end
 end
 
