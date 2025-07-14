@@ -22,8 +22,8 @@ M.start = function(base_ref, compare_ref)
       -- alt-diffview shows untracked files when no refs are specified
       cmd = "AltDiffviewOpen"
     else
-      -- Compare against a specific ref
-      cmd = string.format("AltDiffviewOpen %s", base_ref)
+      -- Use --merge-base option to show changes from merge base
+      cmd = string.format("AltDiffviewOpen %s --merge-base", base_ref)
     end
   else
     -- Normal comparison

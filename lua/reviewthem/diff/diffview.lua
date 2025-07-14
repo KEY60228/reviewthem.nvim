@@ -19,6 +19,8 @@ M.start = function(base_ref, compare_ref)
       cmd = "DiffviewOpen"
     else
       cmd = string.format("DiffviewOpen %s", base_ref)
+      -- Show warning about diffview limitation
+      vim.notify("reviewthem.nvim: Due to diffview limitations, showing two-dot diff instead of three-dot diff", vim.log.levels.WARN)
     end
   else
     -- Normal comparison

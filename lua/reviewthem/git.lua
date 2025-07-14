@@ -11,7 +11,12 @@ M.get_diff_files = function(base_ref, compare_ref)
       -- No base ref means compare index with working directory
       cmd = "git diff --name-status"
     else
-      cmd = string.format("git diff --name-status %s", base_ref)
+      local merge_base = M.get_merge_base(base_ref)
+      if merge_base then
+        cmd = string.format("git diff --name-status %s", merge_base)
+      else
+        cmd = string.format("git diff --name-status %s", base_ref)
+      end
     end
     local result = vim.fn.systemlist(cmd)
 
@@ -126,4 +131,15 @@ M.get_relative_path = function(absolute_path)
   return relative
 end
 
+-- Get merge base between HEAD and the given ref
+M.get_merge_base = function(ref)
+  local cmd = string.format("git merge-base HEAD %s", vim.fn.shellescape(ref))
+  local result = vim.fn.system(cmd)
+  if vim.v.shell_error == 0 and result ~= "" then
+    return vim.trim(result)
+  end
+  return nil
+end
+
 return M
+
