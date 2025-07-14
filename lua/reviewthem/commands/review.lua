@@ -45,7 +45,7 @@ M.start = function(base_ref, compare_ref)
     if (base_ref == nil or base_ref == "") and (compare_ref == nil or compare_ref == "") then
       msg = "Review session started: HEAD...Working Directory"
     elseif compare_ref == nil or compare_ref == "" then
-      msg = string.format("Review session started: %s..Working Directory", base_ref)
+      msg = string.format("Review session started: %s...Working Directory", base_ref)
     else
       msg = string.format("Review session started: %s...%s", base_ref, compare_ref)
     end
