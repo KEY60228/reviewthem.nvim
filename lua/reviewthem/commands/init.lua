@@ -13,6 +13,27 @@ M.setup = function()
   end, {
       nargs = "*",
       desc = "Start a code review between two branches",
+      complete = function(ArgLead)
+        local refs = {}
+
+        -- Get branches
+        local branches = vim.fn.systemlist("git branch -a --format='%(refname:short)'")
+        for _, branch in ipairs(branches) do
+          if branch:match("^" .. vim.pesc(ArgLead)) then
+            table.insert(refs, branch)
+          end
+        end
+
+        -- Get tags
+        local tags = vim.fn.systemlist("git tag")
+        for _, tag in ipairs(tags) do
+          if tag:match("^" .. vim.pesc(ArgLead)) then
+            table.insert(refs, tag)
+          end
+        end
+
+        return refs
+      end,
     })
 
   -- Create command abbreviation from config
