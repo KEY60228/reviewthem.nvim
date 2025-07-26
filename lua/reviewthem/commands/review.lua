@@ -145,7 +145,7 @@ M.format_as_markdown = function(structured)
   local lines = {
     "# Code Review",
     "",
-    string.format("**Base:** %s", structured.review.base_ref or "N/A"),
+    string.format("**Base:** %s", structured.review.base_ref or "HEAD"),
     string.format("**Compare:** %s", structured.review.compare_ref or "Working Directory"),
     string.format("**Date:** %s", structured.review.timestamp),
     "",
