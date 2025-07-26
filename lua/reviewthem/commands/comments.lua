@@ -2,6 +2,7 @@ local M = {}
 local state = require("reviewthem.state")
 local config = require("reviewthem.config")
 local git = require("reviewthem.git")
+local float_input = require("reviewthem.float_input")
 
 -- Single line comment (Normal mode)
 M.add_comment = function()
@@ -13,10 +14,16 @@ M.add_comment = function()
   local file = git.get_relative_path(absolute_path)
   local line = vim.fn.line(".")
 
-  local prompt = string.format("Add comment for %s:%d: ", file, line)
+  -- Get preview lines
+  local current_line = vim.fn.getline(line)
+  local preview_lines = { string.format("%4d: %s", line, current_line) }
 
-  vim.ui.input({ prompt = prompt }, function(input)
-    if input and input ~= "" then
+  local title = string.format("Add comment for %s:%d", file, line)
+
+  float_input.open({
+    title = title,
+    preview_lines = preview_lines,
+    on_confirm = function(input)
       state.add_comment(file, line, line, input)
       M._update_signs()
 
@@ -24,8 +31,8 @@ M.add_comment = function()
       vim.defer_fn(function()
         vim.notify(msg, vim.log.levels.INFO)
       end, 100)
-    end
-  end)
+    end,
+  })
 end
 
 -- Range comment (Visual mode or command line range)
@@ -37,15 +44,24 @@ M.add_comment_with_range = function(line_start, line_end)
   local absolute_path = vim.fn.expand("%:p")
   local file = git.get_relative_path(absolute_path)
 
-  local prompt
-  if line_start == line_end then
-    prompt = string.format("Add comment for %s:%d: ", file, line_start)
-  else
-    prompt = string.format("Add comment for %s:%d-%d: ", file, line_start, line_end)
+  -- Get preview lines
+  local preview_lines = {}
+  for i = line_start, line_end do
+    local line_content = vim.fn.getline(i)
+    table.insert(preview_lines, string.format("%4d: %s", i, line_content))
   end
 
-  vim.ui.input({ prompt = prompt }, function(input)
-    if input and input ~= "" then
+  local title
+  if line_start == line_end then
+    title = string.format("Add comment for %s:%d", file, line_start)
+  else
+    title = string.format("Add comment for %s:%d-%d", file, line_start, line_end)
+  end
+
+  float_input.open({
+    title = title,
+    preview_lines = preview_lines,
+    on_confirm = function(input)
       state.add_comment(file, line_start, line_end, input)
       M._update_signs()
 
@@ -59,8 +75,8 @@ M.add_comment_with_range = function(line_start, line_end)
       vim.defer_fn(function()
         vim.notify(msg, vim.log.levels.INFO)
       end, 100)
-    end
-  end)
+    end,
+  })
 end
 
 M._update_signs = function()
