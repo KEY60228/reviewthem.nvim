@@ -167,12 +167,16 @@ M.format_as_markdown = function(structured)
     table.insert(lines, "")
     for _, comment in ipairs(file_comments) do
       if comment.line_start == comment.line_end then
-        table.insert(lines, string.format("- **Line %d:** %s", comment.line_start, comment.comment))
+        table.insert(lines, string.format("#### Line %d", comment.line_start))
       else
-        table.insert(lines, string.format("- **Lines %d-%d:** %s", comment.line_start, comment.line_end, comment.comment))
+        table.insert(lines, string.format("#### Lines %d-%d", comment.line_start, comment.line_end))
       end
+      table.insert(lines, "")
+      table.insert(lines, "```")
+      table.insert(lines, comment.comment)
+      table.insert(lines, "```")
+      table.insert(lines, "")
     end
-    table.insert(lines, "")
   end
 
   return table.concat(lines, "\n")
