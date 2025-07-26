@@ -8,6 +8,27 @@ local active_float = {
   autocmd_group = nil,
 }
 
+-- Helper function for safe window/buffer closing
+local function safe_close(win, buf)
+  if win and vim.api.nvim_win_is_valid(win) then
+    pcall(vim.api.nvim_win_close, win, true)
+  end
+  if buf and vim.api.nvim_buf_is_valid(buf) then
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+  end
+end
+
+-- Helper function to set keymaps for multiple modes
+local function set_keymap(buf, modes, key, callback)
+  for _, mode in ipairs(modes) do
+    vim.api.nvim_buf_set_keymap(buf, mode, key, "", {
+      noremap = true,
+      silent = true,
+      callback = callback
+    })
+  end
+end
+
 local function create_float_window(opts)
   local width = opts.width or 60
   local height = opts.height or 10
@@ -33,17 +54,22 @@ local function create_float_window(opts)
   -- Create window
   local win = vim.api.nvim_open_win(buf, true, win_opts)
 
-  -- Set window options
-  vim.api.nvim_win_set_option(win, "wrap", true)
-  vim.api.nvim_win_set_option(win, "linebreak", true)
+  -- Set window options with error handling
+  pcall(vim.api.nvim_win_set_option, win, "wrap", true)
+  pcall(vim.api.nvim_win_set_option, win, "linebreak", true)
 
   return buf, win
 end
 
 local function setup_keymaps(buf, confirm_key, cancel_key, on_confirm, on_cancel, input_start_line)
   local confirm_callback = function()
-    -- Get only the lines from the input area (after preview)
-    local lines = vim.api.nvim_buf_get_lines(buf, input_start_line - 1, -1, false)
+    -- Safely get lines from the input area
+    local ok, lines = pcall(vim.api.nvim_buf_get_lines, buf, input_start_line - 1, -1, false)
+    if not ok then
+      on_cancel()
+      return
+    end
+
     -- Remove empty lines at the end
     while #lines > 0 and lines[#lines] == "" do
       table.remove(lines)
@@ -56,37 +82,23 @@ local function setup_keymaps(buf, confirm_key, cancel_key, on_confirm, on_cancel
     end
   end
 
-  -- Confirm keybindings (both insert and normal mode)
-  vim.api.nvim_buf_set_keymap(buf, "i", confirm_key, "", {
-    noremap = true,
-    silent = true,
-    callback = confirm_callback
-  })
+  -- Set confirm keybindings for both modes
+  set_keymap(buf, {"i", "n"}, confirm_key, confirm_callback)
 
-  vim.api.nvim_buf_set_keymap(buf, "n", confirm_key, "", {
-    noremap = true,
-    silent = true,
-    callback = confirm_callback
-  })
-
-  -- Cancel keybindings (both insert and normal mode)
-  vim.api.nvim_buf_set_keymap(buf, "n", cancel_key, "", {
-    noremap = true,
-    silent = true,
-    callback = on_cancel
-  })
-
-  vim.api.nvim_buf_set_keymap(buf, "i", cancel_key, "", {
-    noremap = true,
-    silent = true,
-    callback = on_cancel
-  })
+  -- Set cancel keybindings for both modes
+  set_keymap(buf, {"i", "n"}, cancel_key, on_cancel)
 
   -- Allow normal mode editing
-  vim.api.nvim_buf_set_keymap(buf, "n", "i", "i", { noremap = true })
-  vim.api.nvim_buf_set_keymap(buf, "n", "a", "a", { noremap = true })
-  vim.api.nvim_buf_set_keymap(buf, "n", "o", "o", { noremap = true })
-  vim.api.nvim_buf_set_keymap(buf, "n", "O", "O", { noremap = true })
+  local normal_mode_keys = {
+    ["i"] = "i",
+    ["a"] = "a",
+    ["o"] = "o",
+    ["O"] = "O"
+  }
+
+  for key, cmd in pairs(normal_mode_keys) do
+    vim.api.nvim_buf_set_keymap(buf, "n", key, cmd, { noremap = true })
+  end
 end
 
 local function setup_cursor_restriction(buf, win, input_start_line)
@@ -133,7 +145,6 @@ local function setup_cursor_restriction(buf, win, input_start_line)
       -- If preview area was modified, restore it
       if #lines < input_start_line - 1 then
         -- Buffer was cleared or preview lines were deleted
-        local cursor = vim.api.nvim_win_get_cursor(win)
         vim.api.nvim_win_set_cursor(win, { input_start_line, 0 })
       end
     end,
@@ -142,7 +153,7 @@ end
 
 local function cleanup_autocmds()
   if active_float.autocmd_group then
-    vim.api.nvim_del_augroup_by_id(active_float.autocmd_group)
+    pcall(vim.api.nvim_del_augroup_by_id, active_float.autocmd_group)
     active_float.buf = nil
     active_float.win = nil
     active_float.input_start_line = nil
@@ -212,8 +223,7 @@ function M.open(opts)
   -- Set up completion function
   local on_confirm = function(text)
     cleanup_autocmds()
-    vim.api.nvim_win_close(win, true)
-    vim.api.nvim_buf_delete(buf, { force = true })
+    safe_close(win, buf)
     if opts.on_confirm then
       opts.on_confirm(text)
     end
@@ -221,8 +231,7 @@ function M.open(opts)
 
   local on_cancel = function()
     cleanup_autocmds()
-    vim.api.nvim_win_close(win, true)
-    vim.api.nvim_buf_delete(buf, { force = true })
+    safe_close(win, buf)
     if opts.on_cancel then
       opts.on_cancel()
     end
@@ -240,9 +249,9 @@ function M.open(opts)
   vim.api.nvim_win_set_cursor(win, {input_start_line, 0})
   vim.cmd("startinsert")
 
-  -- Set buffer to be modifiable
-  vim.api.nvim_buf_set_option(buf, "modifiable", true)
-  vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+  -- Set buffer options with error handling
+  pcall(vim.api.nvim_buf_set_option, buf, "modifiable", true)
+  pcall(vim.api.nvim_buf_set_option, buf, "buftype", "nofile")
 
   return buf, win
 end
