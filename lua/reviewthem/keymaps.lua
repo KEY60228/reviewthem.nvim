@@ -1,62 +1,52 @@
 local M = {}
 
-M.setup = function()
-  local config = require("reviewthem.config")
-  local review = require("reviewthem.commands.review")
-  local comments = require("reviewthem.commands.comments")
-  local files = require("reviewthem.commands.files")
+--- Set up keymaps for diff buffers.
+M.setup_diff_keymaps = function()
+  local config = require("reviewthem.config").get()
+  local km = config.keymaps
 
-  local opts = config.get()
-  local keymaps = opts.keymaps
+  local group = vim.api.nvim_create_augroup("ReviewThemKeymaps", { clear = true })
 
-  if keymaps.start_review then
-    vim.keymap.set("n", keymaps.start_review, review.start, {
-      desc = "Start review"
-    })
-  end
+  vim.api.nvim_create_autocmd("BufEnter", {
+    group = group,
+    pattern = { "reviewthem://old", "reviewthem://new" },
+    callback = function(ev)
+      local bufnr = ev.buf
+      if vim.b[bufnr].reviewthem_keymaps_set then
+        return
+      end
+      vim.b[bufnr].reviewthem_keymaps_set = true
 
-  if keymaps.add_comment then
-    -- Normal mode
-    vim.keymap.set("n", keymaps.add_comment, comments.add_comment, {
-      desc = "Add review comment"
-    })
+      local function map(mode, key, cmd, desc)
+        if key and key ~= "" then
+          vim.keymap.set(mode, key, cmd, { buffer = bufnr, silent = true, desc = desc })
+        end
+      end
 
-    -- Visual mode - handle selected range
-    vim.keymap.set("v", keymaps.add_comment, ":<C-u>lua require('reviewthem.commands.comments').add_comment_with_range(vim.fn.line(\"'<\"), vim.fn.line(\"'>\"))<CR>", {
-        desc = "Add review comment to selected range"
-      })
-  end
+      -- Comment
+      map("n", km.add_comment, "<cmd>ReviewThemAddComment<CR>", "Add comment")
+      map("v", km.add_comment, ":'<,'>ReviewThemAddComment<CR>", "Add comment (range)")
 
-  if keymaps.submit_review then
-    vim.keymap.set("n", keymaps.submit_review, review.submit, {
-      desc = "Submit review comments"
-    })
-  end
+      -- Review
+      map("n", km.toggle_reviewed, "<cmd>ReviewThemToggleReviewed<CR>", "Toggle reviewed")
+      map("n", km.submit_review, "<cmd>ReviewThemSubmit<CR>", "Submit review")
+      map("n", km.show_comments, "<cmd>ReviewThemShowComments<CR>", "Show comments")
 
-  if keymaps.abort_review then
-    vim.keymap.set("n", keymaps.abort_review, review.abort, {
-      desc = "Abort review"
-    })
-  end
-
-  if keymaps.show_comments then
-    vim.keymap.set("n", keymaps.show_comments, comments.show_comments, {
-      desc = "Show review comments"
-    })
-  end
-
-  if keymaps.toggle_reviewed then
-    vim.keymap.set("n", keymaps.toggle_reviewed, files.toggle_current_file_reviewed, {
-      desc = "Toggle file reviewed status"
-    })
-  end
-
-  if keymaps.show_status then
-    vim.keymap.set("n", keymaps.show_status, files.show_review_status, {
-      desc = "Show review status"
-    })
-  end
+      -- Tree / session
+      map("n", km.focus_tree, function()
+        local file_tree = require("reviewthem.ui.file_tree")
+        if file_tree.is_open() then
+          local winnr = file_tree.get_winnr()
+          if winnr and vim.api.nvim_win_is_valid(winnr) then
+            vim.api.nvim_set_current_win(winnr)
+          end
+        else
+          vim.cmd("ReviewThemTree")
+        end
+      end, "Focus file tree")
+      map("n", km.close_review, "<cmd>ReviewThemPause<CR>", "Close/pause review")
+    end,
+  })
 end
 
 return M
-
