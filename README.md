@@ -2,26 +2,24 @@
 
 # ReviewThem.nvim
 
-A Neovim plugin for streamlining code reviews directly in your editor.
+A local code review tool for Neovim. Review diffs, add comments, and export Markdown — all inside your editor with zero plugin dependencies.
 
 This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) - a fantastic code review tool. We created this Neovim-specific implementation with deep respect for the original work.
 
 ## Features
 
-- 🔍 **Review Diffs**: Start review sessions between branches, commits, or uncommitted changes
-- 💬 **Add Comments**: Comment on single lines or ranges with context
-- ✅ **Track Progress**: Mark files as reviewed and monitor review status
-- 📋 **Export Reviews**: Submit reviews in Markdown or JSON format
-- 🎨 **Flexible UI**: Choose between builtin UI or Telescope integration
+- **Split diff view** — Side-by-side old/new comparison with syntax highlighting
+- **File tree sidebar** — Browse changed files, track review progress
+- **Line-level comments** — Floating input window, supports multi-line ranges
+- **Session management** — Named sessions persisted as JSON, pause and resume anytime
+- **Markdown export** — Copy review output to clipboard, ready for coding agents
+- **Context-aware commands** — Only relevant commands are available at each stage
+- **Zero dependencies** — Requires only Neovim >= 0.10.0 and Git
 
 ## Requirements
 
-- Neovim >= 0.7.0
+- Neovim >= 0.10.0
 - Git
-- At least one of the following diff tools:
-  - [diffview.nvim](https://github.com/sindrets/diffview.nvim) (optional)
-  - [alt-diffview](https://github.com/KEY60228/alt-diffview) (optional)
-- [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) (optional, for enhanced UI)
 
 ## Installation
 
@@ -30,15 +28,8 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 ```lua
 {
   "KEY60228/reviewthem.nvim",
-  dependencies = {
-    "sindrets/diffview.nvim", -- optional (need at least one diff tool)
-    "KEY60228/alt-diffview", -- alternative diff tool
-    "nvim-telescope/telescope.nvim", -- optional
-  },
   config = function()
-    require("reviewthem").setup({
-      -- your configuration here
-    })
+    require("reviewthem").setup()
   end,
 }
 ```
@@ -48,52 +39,11 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 ```lua
 use {
   "KEY60228/reviewthem.nvim",
-  requires = {
-    "sindrets/diffview.nvim", -- optional (need at least one diff tool)
-    "KEY60228/alt-diffview", -- alternative diff tool
-    "nvim-telescope/telescope.nvim", -- optional
-  },
   config = function()
-    require("reviewthem").setup({
-      -- your configuration here
-    })
+    require("reviewthem").setup()
   end,
 }
 ```
-
-## Configuration
-
-```lua
-require("reviewthem").setup({
-  diff_tool = "diffview",              -- "diffview" or "alt-diffview"
-  comment_sign = "💬",                 -- Sign shown in gutter for comments
-  submit_format = "markdown",          -- "markdown" or "json"
-  submit_destination = "clipboard",    -- "clipboard" or file path
-  ui = "builtin",                      -- "builtin" or "telescope"
-  keymaps = {
-    start_review = "<leader>rstart",
-    add_comment = "<leader>rtc",
-    submit_review = "<leader>rtsubmit",
-    abort_review = "<leader>rtabort",
-    show_comments = "<leader>rtsc",
-    toggle_reviewed = "<leader>rtmr",
-    show_status = "<leader>rtrs",
-  },
-  command_aliases = {
-    review_start = "rts",              -- :rts expands to :ReviewThemStart
-  },
-})
-```
-
-### Diff Tool Selection
-
-When comparing a specific ref with the working tree (e.g., `:ReviewThemStart main`), we recommend using **alt-diffview** as your diff tool:
-
-```lua
-diff_tool = "alt-diffview",
-```
-
-This is because diffview.nvim may not properly display untracked files when comparing with the working tree. alt-diffview handles this scenario more reliably.
 
 ## Usage
 
@@ -107,132 +57,115 @@ This is because diffview.nvim may not properly display untracked files when comp
    ```vim
    :ReviewThemStart
    ```
+   This opens a three-pane layout: file tree | old diff | new diff.
 
-2. **Navigate and add comments**
-   - Use diffview to navigate through changes
-   - Press `<leader>rtc` to add a comment on the current line
-   - Select multiple lines in visual mode and press `<leader>rtc` for range comments
+2. **Browse and comment**
+   - Select files in the file tree sidebar
+   - Press `<leader>rc` on a diff line to add a comment
+   - Use visual mode for multi-line comments
 
-3. **Track your progress**
-   - Press `<leader>rtmr` to mark the current file as reviewed
-   - Press `<leader>rtrs` to see overall review status
+3. **Track progress**
+   - Press `r` in the file tree to mark files as reviewed
+   - Progress is shown at the bottom of the file tree
 
 4. **Submit your review**
    ```vim
    :ReviewThemSubmit
    ```
+   Copies a Markdown summary to your clipboard.
+
+5. **Pause and resume**
+   ```vim
+   :ReviewThemPause
+   ```
+   Later, resume with `:ReviewThemSessions`.
 
 ### Commands
 
+Commands are context-aware — session management commands are only available when no review is active, and review commands are only available during an active session.
+
+#### When no review is active
+
 | Command | Description |
 |---------|-------------|
-| `:ReviewThemStart [base] [compare]` | Start a review session |
+| `:ReviewThemStart [base] [compare] [--name=X]` | Start a new review session |
+| `:ReviewThemSessions` | List sessions (Enter=resume, d=delete) |
+
+#### During an active review
+
+| Command | Description |
+|---------|-------------|
 | `:ReviewThemAddComment` | Add comment to current line/selection |
-| `:ReviewThemSubmit` | Submit all review comments |
-| `:ReviewThemAbort` | Abort current review session |
-| `:ReviewThemShowComments` | Show all comments |
-| `:ReviewThemMarkAsReviewed` | Mark current file as reviewed |
-| `:ReviewThemUnmarkAsReviewed` | Unmark current file as reviewed |
-| `:ReviewThemToggleReviewed` | Toggle reviewed status |
-| `:ReviewThemStatus` | Show review status of all files |
+| `:ReviewThemEditComment` | Edit comment at cursor position |
+| `:ReviewThemDeleteComment` | Delete comment at cursor position |
+| `:ReviewThemShowComments` | List all comments (Enter=jump, d=delete) |
+| `:ReviewThemToggleReviewed` | Toggle reviewed status of current file |
+| `:ReviewThemSubmit` | Export Markdown to clipboard and close |
+| `:ReviewThemPause` | Close UI, keep session saved |
+| `:ReviewThemAbort` | Discard session |
+| `:ReviewThemTree` | Toggle file tree sidebar |
 
 ### Key Mappings
 
-Default mappings (customizable in setup):
+Default mappings in diff buffers (customizable in setup):
 
-| Mapping | Mode | Description |
-|---------|------|-------------|
-| `<leader>rstart` | n | Start review |
-| `<leader>rtc` | n, v | Add comment |
-| `<leader>rtsubmit` | n | Submit review |
-| `<leader>rtabort` | n | Abort review |
-| `<leader>rtsc` | n | Show comments |
-| `<leader>rtmr` | n | Toggle reviewed |
-| `<leader>rtrs` | n | Show status |
+| Mapping | Description |
+|---------|-------------|
+| `<leader>rc` | Add comment (normal and visual mode) |
+| `<leader>rs` | Submit review |
+| `<leader>rv` | Toggle file reviewed status |
+| `<leader>rl` | Show all comments |
+| `<leader>re` | Focus file tree |
+| `<leader>rq` | Pause / close review |
 
-In the review status window:
-- `t` - Toggle reviewed status (builtin UI)
-- `<C-t>` - Toggle reviewed status (telescope UI)
-- `q` or `<Esc>` - Close window
+Comment input window:
+
+| Mapping | Description |
+|---------|-------------|
+| `<A-CR>` | Confirm comment |
+| `<Esc>` | Cancel |
+
+File tree sidebar:
+
+| Mapping | Description |
+|---------|-------------|
+| `<CR>` | Open file / toggle directory |
+| `r` | Toggle reviewed status |
+| `q` | Close file tree |
+
+## Configuration
+
+All options are optional — defaults are shown below:
+
+```lua
+require("reviewthem").setup({
+  comment_sign = "💬",        -- sign shown on commented lines
+  file_tree_width = 30,       -- sidebar width in columns
+  auto_save = true,           -- auto-save session on changes
+  keymaps = {
+    add_comment = "<leader>rc",
+    confirm_comment = "<A-CR>",
+    cancel_comment = "<Esc>",
+    submit_review = "<leader>rs",
+    toggle_reviewed = "<leader>rv",
+    show_comments = "<leader>rl",
+    focus_tree = "<leader>re",
+    close_review = "<leader>rq",
+  },
+})
+```
 
 ## Health Check
 
-Run `:checkhealth reviewthem` to diagnose any issues with your setup.
-
-## Example Review Output
-
-### Markdown Format
-```markdown
-# Code Review
-
-**Base:** main
-**Compare:** feature/new-feature
-**Date:** 2024-01-15 10:30:00
-
-## Comments
-
-### src/main.lua
-
-- **Line 42:** Consider extracting this logic into a separate function
-- **Lines 55-60:** This could be simplified using a table lookup
-
-### tests/main_spec.lua
-
-- **Line 23:** Add test case for edge condition
-```
-
-### JSON Format
-```json
-{
-  "review": {
-    "base_ref": "main",
-    "compare_ref": "feature/new-feature",
-    "timestamp": "2024-01-15 10:30:00",
-    "comments": [
-      {
-        "file": "src/main.lua",
-        "line_start": 42,
-        "line_end": 42,
-        "comment": "Consider extracting this logic into a separate function"
-      }
-    ]
-  }
-}
+```vim
+:checkhealth reviewthem
 ```
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Roadmap
-
-### Planned Features
-
-- **AddComment UX Improvements**
-  - [ ] Float window input for better writing experience
-  
-- **Mark as Reviewed UX Improvements**
-  - [ ] Display reviewed marks in file pane
-  
-- **ShowComments/ShowStatus UX Improvements**
-  - [ ] Press Enter to jump to diff view from comment/status list
-  
-- **Extended Diff Tool Support**
-  - [ ] Built-in diff mode support
-  - [ ] Other popular diff tools
-  
-- **Extended UI Support**
-  - [ ] FZF integration
-  - [ ] Other popular UI frameworks
-
 ## Acknowledgments
 
-- [ReviewIt](https://github.com/yoshiko-pg/reviewit) - The original ReviewIt tool that inspired this Neovim plugin. Thank you for the wonderful idea and implementation!
-- [diffview.nvim](https://github.com/sindrets/diffview.nvim) for the excellent diff viewing functionality
-- [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) for the fuzzy finder integration
-- [Oh My Logo](https://github.com/shinshin86/oh-my-logo) - The amazing tool used to create our logo. Thank you for making logo creation so simple and fun!
-
+- [ReviewIt](https://github.com/yoshiko-pg/reviewit) - The original ReviewIt tool that inspired this Neovim plugin
+- [Oh My Logo](https://github.com/shinshin86/oh-my-logo) - The tool used to create our logo

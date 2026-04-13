@@ -1,119 +1,54 @@
 local M = {}
 
-local health = vim.health or require("health")
-local start = health.start or health.report_start
-local ok = health.ok or health.report_ok
-local warn = health.warn or health.report_warn
-local error = health.error or health.report_error
-
 M.check = function()
-  start("reviewthem.nvim")
+  vim.health.start("reviewthem.nvim")
 
-  -- Check Neovim version
-  if vim.fn.has("nvim-0.7.0") == 1 then
-    ok("Neovim version is 0.7.0 or higher")
+  -- Neovim version
+  if vim.fn.has("nvim-0.10.0") == 1 then
+    vim.health.ok("Neovim >= 0.10.0")
   else
-    error("reviewthem.nvim requires Neovim 0.7.0 or higher")
+    vim.health.error("Neovim >= 0.10.0 required")
   end
 
-  -- Check Git
+  -- Git
   local git_version = vim.fn.system("git --version")
   if vim.v.shell_error == 0 then
-    ok("Git is installed: " .. vim.trim(git_version))
+    vim.health.ok("git: " .. vim.trim(git_version))
   else
-    error("Git is not installed or not in PATH")
+    vim.health.error("git not found")
   end
 
-  -- Check if in a Git repository
-  vim.fn.system("git rev-parse --show-toplevel 2>/dev/null")
-  if vim.v.shell_error == 0 then
-    ok("Current directory is inside a Git repository")
+  -- Git repository
+  local git = require("reviewthem.git")
+  local root = git.get_git_root()
+  if root then
+    vim.health.ok("Git repository: " .. root)
   else
-    warn("Not in a Git repository. reviewthem.nvim requires a Git repository to function")
+    vim.health.warn("Not in a git repository")
   end
 
-  -- Check required dependencies
-  start("Dependencies")
-
-  -- Check plenary.nvim (required for some features)
-  local has_plenary = pcall(require, "plenary")
-  if has_plenary then
-    ok("plenary.nvim is installed")
+  -- Session storage
+  local store_dir = vim.fn.stdpath("data") .. "/reviewthem/sessions"
+  if vim.fn.isdirectory(store_dir) == 1 then
+    vim.health.ok("Session storage: " .. store_dir)
   else
-    warn("plenary.nvim is not installed (optional, but recommended)")
+    vim.health.info("Session storage will be created at: " .. store_dir)
   end
 
-  -- Check diff tools
-  start("Diff tools")
-
-  -- Check diffview.nvim
-  local has_diffview = pcall(require, "diffview")
-  if has_diffview then
-    ok("diffview.nvim is installed")
-  else
-    warn("diffview.nvim is not installed")
-  end
-
-  -- Check alt-diffview.nvim
-  local has_alt_diffview = pcall(require, "alt-diffview")
-  if has_alt_diffview then
-    ok("alt-diffview.nvim is installed")
-  else
-    warn("alt-diffview.nvim is not installed")
-  end
-
-  -- At least one diff tool should be available
-  if not has_diffview and not has_alt_diffview then
-    error("No diff tools available. Please install either sindrets/diffview.nvim or KEY60228/alt-diffview.nvim")
-  end
-
-  -- Check UI providers
-  start("UI providers")
-
-  -- Check telescope.nvim
-  local has_telescope = pcall(require, "telescope")
-  if has_telescope then
-    ok("telescope.nvim is installed (optional UI provider)")
-  else
-    warn("telescope.nvim is not installed (optional, builtin UI will be used)")
-  end
-
-  -- Check configuration
-  start("Configuration")
-
-  local config = require("reviewthem.config")
-  local opts = config.get()
-
-  if opts then
-    ok("Configuration loaded successfully")
-
-    -- Check UI setting
-    if opts.ui == "telescope" and not has_telescope then
-      warn("UI is set to 'telescope' but telescope.nvim is not installed. Falling back to builtin UI")
-    else
-      ok(string.format("UI provider: %s", opts.ui))
-    end
-
-    -- Check diff tool setting
-    if opts.diff_tool == "diffview" and not has_diffview then
-      error("Diff tool is set to 'diffview' but diffview.nvim is not installed")
-    elseif opts.diff_tool == "alt-diffview" and not has_alt_diffview then
-      error("Diff tool is set to 'alt-diffview' but alt-diffview.nvim is not installed")
-    else
-      ok(string.format("Diff tool: %s", opts.diff_tool))
-    end
-  else
-    error("Failed to load configuration")
-  end
-
-  -- Check clipboard
-  start("Clipboard")
+  -- Clipboard
   if vim.fn.has("clipboard") == 1 then
-    ok("Clipboard support is available")
+    vim.health.ok("Clipboard support available")
   else
-    warn("No clipboard support. Submit to clipboard will not work")
+    vim.health.warn("Clipboard support not detected (review output may not copy correctly)")
+  end
+
+  -- Configuration
+  local config = require("reviewthem.config").get()
+  if config and config.keymaps then
+    vim.health.ok("Configuration loaded")
+  else
+    vim.health.warn("Configuration not loaded (call require('reviewthem').setup())")
   end
 end
 
 return M
-

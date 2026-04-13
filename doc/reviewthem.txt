@@ -1,4 +1,4 @@
-*reviewthem.txt*	A Neovim plugin for streamlining code reviews
+*reviewthem.txt*	Local code review tool for Neovim
 
 Author:  Kenta Yamaguchi
 License: MIT
@@ -14,30 +14,31 @@ CONTENTS                                                    *reviewthem-contents
     6. Mappings ............................. |reviewthem-mappings|
     7. Configuration ........................ |reviewthem-configuration|
     8. Usage ................................ |reviewthem-usage|
-    9. Health Check ......................... |reviewthem-health|
+    9. Session Management ................... |reviewthem-sessions|
+   10. Health Check ......................... |reviewthem-health|
 
 ==============================================================================
 1. INTRODUCTION                                         *reviewthem-introduction*
 
-reviewthem.nvim is a Neovim plugin designed to streamline code reviews within
-your editor. It allows you to:
+reviewthem.nvim is a local code review tool for Neovim. It provides a
+GitHub-PR-like review experience entirely within your editor, with zero
+external plugin dependencies.
 
-- Start review sessions between branches or commits
-- Add comments to specific lines or ranges
-- Mark files as reviewed
-- View review status and progress
-- Export review comments in various formats
+Features:
+- Split diff view (side-by-side old/new comparison)
+- File tree sidebar with review progress
+- Line-level comments with floating input
+- Named sessions with JSON persistence
+- Markdown export for pasting into coding agents
+- Context-aware commands (only available when relevant)
 
 ==============================================================================
 2. REQUIREMENTS                                         *reviewthem-requirements*
 
-- Neovim >= 0.7.0
+- Neovim >= 0.10.0
 - Git
-- At least one of the following diff tools:
-  - diffview.nvim (optional)
-  - alt-diffview (optional)
-- telescope.nvim (optional, for enhanced UI)
-- plenary.nvim (optional, recommended)
+
+No other plugins are required.
 
 ==============================================================================
 3. INSTALLATION                                         *reviewthem-installation*
@@ -46,15 +47,8 @@ Using lazy.nvim: >lua
 
     {
       "KEY60228/reviewthem.nvim",
-      dependencies = {
-        "sindrets/diffview.nvim", -- optional (need at least one diff tool)
-        "KEY60228/alt-diffview", -- alternative diff tool
-        "nvim-telescope/telescope.nvim", -- optional
-      },
       config = function()
-        require("reviewthem").setup({
-          -- your configuration
-        })
+        require("reviewthem").setup()
       end,
     }
 <
@@ -63,15 +57,8 @@ Using packer.nvim: >lua
 
     use {
       "KEY60228/reviewthem.nvim",
-      requires = {
-        "sindrets/diffview.nvim", -- optional (need at least one diff tool)
-        "KEY60228/alt-diffview", -- alternative diff tool
-        "nvim-telescope/telescope.nvim", -- optional
-      },
       config = function()
-        require("reviewthem").setup({
-          -- your configuration
-        })
+        require("reviewthem").setup()
       end,
     }
 <
@@ -79,179 +66,206 @@ Using packer.nvim: >lua
 ==============================================================================
 4. SETUP                                                       *reviewthem-setup*
 
-Call the setup function with your configuration: >lua
+Call the setup function with optional configuration: >lua
 
     require("reviewthem").setup({
-      diff_tool = "diffview",
       comment_sign = "💬",
-      submit_format = "markdown",
-      submit_destination = "clipboard",
-      ui = "telescope", -- or "builtin"
+      file_tree_width = 30,
+      auto_save = true,
       keymaps = {
-        start_review = "<leader>rtstart",
-        add_comment = "<leader>rtc",
-        submit_review = "<leader>rtsubmit",
-        abort_review = "<leader>rtabort",
-        show_comments = "<leader>rtsc",
-        toggle_reviewed = "<leader>rtmr",
-        show_status = "<leader>rtrs",
+        add_comment = "<leader>rc",
+        confirm_comment = "<A-CR>",
+        cancel_comment = "<Esc>",
+        submit_review = "<leader>rs",
+        toggle_reviewed = "<leader>rv",
+        show_comments = "<leader>rl",
+        focus_tree = "<leader>re",
+        close_review = "<leader>rq",
       },
     })
 <
 
+All options shown above are defaults and can be omitted.
+
 ==============================================================================
 5. COMMANDS                                                 *reviewthem-commands*
 
-                                                            *:ReviewThemStart*
-:ReviewThemStart [{base}] [{compare}]
-    Start a review session. If no arguments provided, compares HEAD with
-    working directory. If only {base} provided, compares {base} with working
-    directory. If both provided, compares {base} with {compare}.
+Commands are context-aware. Session management commands are available when
+no review is active. Review commands are available only during an active
+review session.
 
+WHEN NO REVIEW IS ACTIVE ~
+                                                            *:ReviewThemStart*
+:ReviewThemStart [{base}] [{compare}] [--name={name}]
+    Start a new review session. Git ref completion is supported.
+    - No arguments: compare HEAD with working directory.
+    - {base} only: compare {base} with working directory.
+    - Both: compare {base} with {compare}.
+    - --name={name}: assign a session name.
+
+                                                         *:ReviewThemSessions*
+:ReviewThemSessions
+    Open session picker. Keys:
+    - `j`/`k`: navigate
+    - `Enter`: resume the selected session
+    - `d`: delete the selected session (with confirmation)
+    - `Esc`/`q`: cancel
+
+DURING AN ACTIVE REVIEW ~
                                                         *:ReviewThemAddComment*
 :ReviewThemAddComment
-    Add a comment to the current line. In visual mode, adds comment to the
-    selected range.
+    Add a comment to the current diff line. Supports visual mode for
+    multi-line ranges.
 
-:[range]ReviewThemAddComment
-    Add a comment to the specified line range.
+                                                       *:ReviewThemEditComment*
+:ReviewThemEditComment
+    Edit the comment at the current cursor position.
 
-                                                           *:ReviewThemSubmit*
-:ReviewThemSubmit
-    Submit all review comments. Output format and destination are determined
-    by configuration.
+                                                     *:ReviewThemDeleteComment*
+:ReviewThemDeleteComment
+    Delete the comment at the current cursor position.
 
-                                                            *:ReviewThemAbort*
-:ReviewThemAbort
-    Abort the current review session. Prompts for confirmation if there are
-    unsaved comments.
-
-                                                      *:ReviewThemShowComments*
+                                                     *:ReviewThemShowComments*
 :ReviewThemShowComments
-    Display all comments for the current review session.
-
-                                                   *:ReviewThemMarkAsReviewed*
-:ReviewThemMarkAsReviewed
-    Mark the current file as reviewed.
-
-                                                 *:ReviewThemUnmarkAsReviewed*
-:ReviewThemUnmarkAsReviewed
-    Unmark the current file as reviewed.
+    Open comment picker. Keys:
+    - `Enter`: jump to the comment's file and line
+    - `d`: delete the comment (with confirmation)
+    - `Esc`/`q`: cancel
 
                                                    *:ReviewThemToggleReviewed*
 :ReviewThemToggleReviewed
     Toggle the reviewed status of the current file.
 
-                                                           *:ReviewThemStatus*
-:ReviewThemStatus
-    Show the review status of all files, including which files have been
-    reviewed and the total number of comments.
+                                                           *:ReviewThemSubmit*
+:ReviewThemSubmit
+    Generate Markdown output of all comments and copy to clipboard.
+    Closes the review UI.
+
+                                                            *:ReviewThemPause*
+:ReviewThemPause
+    Close the review UI but keep the session saved. Resume later
+    via |:ReviewThemSessions|.
+
+                                                            *:ReviewThemAbort*
+:ReviewThemAbort
+    Discard the current session. Prompts for confirmation if comments
+    exist.
+
+                                                             *:ReviewThemTree*
+:ReviewThemTree
+    Toggle the file tree sidebar.
 
 ==============================================================================
 6. MAPPINGS                                                 *reviewthem-mappings*
 
-Default mappings (can be customized in setup):
+Mappings are active in diff buffers (reviewthem://old, reviewthem://new)
+during a review session. All keys are configurable via |reviewthem-configuration|.
 
-    <leader>rtstart  - Start a review session
-    <leader>rtc      - Add a comment (works in normal and visual mode)
-    <leader>rtsubmit - Submit review
-    <leader>rtabort  - Abort review
-    <leader>rtsc     - Show all comments
-    <leader>rtmr     - Toggle file reviewed status
-    <leader>rtrs     - Show review status
+    <leader>rc      Add a comment (normal and visual mode)
+    <leader>rs      Submit review
+    <leader>rv      Toggle file reviewed status
+    <leader>rl      Show all comments
+    <leader>re      Focus file tree
+    <leader>rq      Pause / close review
 
-In the review status window (builtin UI):
-    t               - Toggle reviewed status of the file under cursor
-    q or <Esc>      - Close the window
+In the comment input floating window:
 
-In the review status window (telescope UI):
-    <C-t>           - Toggle reviewed status of the selected file
+    <A-CR>          Confirm comment
+    <Esc>           Cancel
+
+In the file tree sidebar:
+
+    <CR>            Open file / toggle directory
+    r               Toggle reviewed status
+    q               Close file tree
 
 ==============================================================================
 7. CONFIGURATION                                       *reviewthem-configuration*
 
-Available configuration options:
-
-diff_tool~
-    Default: "diffview"
-    The diff tool to use. Options: "diffview" or "alt-diffview".
-
-    Note: When comparing a specific ref with the working tree (e.g.,
-    :ReviewThemStart main), we recommend using "alt-diffview" as it handles
-    untracked files more reliably in this scenario. diffview.nvim may not
-    properly display untracked files when comparing with the working tree.
-
 comment_sign~
     Default: "💬"
-    The sign to display in the gutter for lines with comments.
+    Sign displayed at the end of commented lines in the diff view.
 
-submit_format~
-    Default: "markdown"
-    Format for submitted reviews. Options: "markdown" or "json".
+file_tree_width~
+    Default: 30
+    Width of the file tree sidebar in columns.
 
-submit_destination~
-    Default: "clipboard"
-    Where to send the review output. Options: "clipboard" or a file path
-    relative to the project root.
-
-ui~
-    Default: "builtin"
-    UI provider to use. Options: "builtin" or "telescope".
+auto_save~
+    Default: true
+    Automatically save the session after changes (debounced 500ms).
 
 keymaps~
-    Default: See |reviewthem-mappings|
-    Table of keymap configurations. Set any to nil to disable.
-
-command_aliases~
-    Default: { review_start = "rts" }
-    Command abbreviations. For example, typing ":rts" expands to ":ReviewThemStart".
+    Table of keymap bindings. Set any key to `""` to disable it.
+    See |reviewthem-mappings| for defaults.
 
 ==============================================================================
 8. USAGE                                                       *reviewthem-usage*
 
 Basic workflow:
 
-1. Start a review session: >
+1. Start a review: >vim
     :ReviewThemStart main feature-branch
 <
-2. Navigate through the diff using your diff tool (e.g., diffview)
+   This opens a three-pane layout: file tree | old diff | new diff.
 
-3. Add comments to lines or ranges: >
+2. Browse files using the file tree sidebar (click or press Enter).
+
+3. Add comments on diff lines: >vim
     :ReviewThemAddComment
-    " or select lines in visual mode and press <leader>rtc
 <
-4. Mark files as reviewed: >
+   Or use the keymap `<leader>rc`. Visual selection is supported for
+   multi-line comments.
+
+4. Mark files as reviewed: press `r` in the file tree or use >vim
     :ReviewThemToggleReviewed
 <
-5. Check review progress: >
-    :ReviewThemStatus
-<
-6. Submit your review: >
+
+5. Submit your review: >vim
     :ReviewThemSubmit
 <
+   This copies a Markdown summary to your clipboard, ready to paste
+   into a coding agent or PR comment.
 
-Example: Reviewing uncommitted changes: >
+Reviewing uncommitted changes: >vim
     :ReviewThemStart
 <
-This compares HEAD with your working directory.
 
-Example: Reviewing a PR: >
-    :ReviewThemStart main feature/new-feature
+Pause and resume: >vim
+    :ReviewThemPause
+    " ... later ...
+    :ReviewThemSessions
 <
 
 ==============================================================================
-9. HEALTH CHECK                                             *reviewthem-health*
+9. SESSION MANAGEMENT                                      *reviewthem-sessions*
 
-Run the health check to diagnose issues: >
+Sessions are saved as JSON files under: >
+    ~/.local/share/nvim/reviewthem/sessions/{project_hash}/
+<
+
+Each session stores:
+- Base and compare refs
+- Parsed diff data
+- All comments with line positions
+- Reviewed file status
+
+Sessions persist across Neovim restarts. Use |:ReviewThemSessions| to
+list, resume, or delete sessions.
+
+==============================================================================
+10. HEALTH CHECK                                            *reviewthem-health*
+
+Run the health check to diagnose issues: >vim
     :checkhealth reviewthem
 <
 
-This will verify:
-- Neovim version compatibility
-- Git installation
-- Required and optional dependencies
-- Configuration validity
+This verifies:
+- Neovim version (>= 0.10.0)
+- Git availability
+- Git repository detection
+- Session storage directory
 - Clipboard support
+- Plugin configuration
 
 ==============================================================================
 vim:tw=78:ts=8:ft=help:norl:
