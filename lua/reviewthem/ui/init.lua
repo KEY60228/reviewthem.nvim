@@ -55,7 +55,7 @@ M.open = function(session)
 
   suspend_nvimtree()
 
-  -- Save the current window — this will become the "old" diff pane
+  -- Save the current window — this will become the "new" diff pane
   local orig_winnr = vim.api.nvim_get_current_win()
 
   -- 1. Open file tree sidebar (creates vsplit to the left)
@@ -69,11 +69,13 @@ M.open = function(session)
     file_tree.refresh(session)
   end)
 
-  -- 2. orig_winnr is still valid — split it for old/new panes
+  -- 2. orig_winnr is still valid — split it for old/new panes.
+  --    :vsplit puts the new window on the left, so it becomes the "old"
+  --    pane and orig_winnr (right) becomes the "new" pane.
   vim.api.nvim_set_current_win(orig_winnr)
   vim.cmd("vsplit")
-  local new_winnr = vim.api.nvim_get_current_win()
-  local old_winnr = orig_winnr
+  local old_winnr = vim.api.nvim_get_current_win()
+  local new_winnr = orig_winnr
 
   -- 3. Render first file
   diff_view.open(session, old_winnr, new_winnr)
