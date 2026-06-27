@@ -70,10 +70,11 @@ M.open = function(session)
   end)
 
   -- 2. orig_winnr is still valid — split it for old/new panes.
-  --    :vsplit puts the new window on the left, so it becomes the "old"
-  --    pane and orig_winnr (right) becomes the "new" pane.
+  --    :leftabove vsplit always puts the new window on the left regardless
+  --    of 'splitright', so it becomes the "old" pane and orig_winnr (right)
+  --    becomes the "new" pane.
   vim.api.nvim_set_current_win(orig_winnr)
-  vim.cmd("vsplit")
+  vim.cmd("leftabove vsplit")
   local old_winnr = vim.api.nvim_get_current_win()
   local new_winnr = orig_winnr
 
