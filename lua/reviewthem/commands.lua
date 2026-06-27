@@ -87,16 +87,22 @@ register_idle_commands = function()
     vim.notify(string.format("Review session '%s' started (%d files)", session.name, #session.diff_files), vim.log.levels.INFO)
   end, {
     nargs = "*",
-    complete = function(_, cmdline)
+    complete = function(arg_lead, cmdline)
       local args = vim.split(cmdline, "%s+", { trimempty = true })
       local n = #args
       if cmdline:match("%s$") then
         n = n + 1
       end
-      if n <= 3 then
-        return git.get_refs()
+      if n > 3 then
+        return {}
       end
-      return {}
+      local matches = {}
+      for _, ref in ipairs(git.get_refs()) do
+        if ref:find(arg_lead, 1, true) == 1 then
+          table.insert(matches, ref)
+        end
+      end
+      return matches
     end,
     desc = "Start a new review session",
   })

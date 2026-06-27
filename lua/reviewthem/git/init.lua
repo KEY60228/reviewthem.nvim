@@ -163,8 +163,8 @@ end
 ---@return string[]
 M.get_refs = function()
   local refs = {}
-  -- Branches
-  local branches = vim.fn.systemlist("git branch --format='%(refname:short)'")
+  -- Branches (including remote-tracking)
+  local branches = vim.fn.systemlist("git branch -a --format='%(refname:short)'")
   for _, b in ipairs(branches) do
     if b ~= "" then
       table.insert(refs, b)
