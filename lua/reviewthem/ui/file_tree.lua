@@ -248,6 +248,8 @@ M.open = function(session, on_select, on_toggle_reviewed)
   vim.wo[winnr].cursorline = true
   vim.wo[winnr].foldcolumn = "0"
   vim.wo[winnr].spell = false
+  vim.wo[winnr].scrollbind = false
+  vim.wo[winnr].cursorbind = false
 
   -- Only show cursorline in focused window
   vim.api.nvim_create_autocmd("WinEnter", {
