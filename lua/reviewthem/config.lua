@@ -2,6 +2,7 @@ local M = {}
 
 M.defaults = {
   comment_sign = "💬",
+  inline_comments = true,
   file_tree_width = 30,
   auto_save = true,
   keymaps = {
