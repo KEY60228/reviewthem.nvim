@@ -14,6 +14,8 @@ M.setup_highlights = function()
     ReviewThemLineNrNew = { default = true, fg = "#60e060" },
     ReviewThemLineNrContext = { default = true, link = "LineNr" },
     ReviewThemCommentSign = { default = true, fg = "#f0c060" },
+    ReviewThemInlineComment = { default = true, link = "Comment" },
+    ReviewThemInlineCommentBorder = { default = true, link = "NonText" },
     ReviewThemSeparator = { default = true, fg = "#555555" },
     ReviewThemPadding = { default = true, bg = "#1a1a2a" },
   }
@@ -79,6 +81,72 @@ M.add_comment_sign = function(bufnr, line_idx, sign)
   vim.api.nvim_buf_set_extmark(bufnr, ns, line_idx, 0, {
     virt_text = { { " " .. sign, "ReviewThemCommentSign" } },
     virt_text_pos = "eol",
+    priority = 20,
+  })
+end
+
+--- Wrap a single line of text by display width, safe for multibyte text.
+---@param line string
+---@param max_width number
+---@return string[]
+local function wrap_line(line, max_width)
+  if max_width < 1 then
+    max_width = 1
+  end
+  if line == "" or vim.fn.strdisplaywidth(line) <= max_width then
+    return { line }
+  end
+
+  local wrapped = {}
+  local current = ""
+  local current_width = 0
+  -- Iterate over UTF-8 characters
+  for ch in line:gmatch("[\1-\127\194-\244][\128-\191]*") do
+    local w = vim.fn.strdisplaywidth(ch)
+    if current_width + w > max_width and current ~= "" then
+      table.insert(wrapped, current)
+      current = ""
+      current_width = 0
+    end
+    current = current .. ch
+    current_width = current_width + w
+  end
+  if current ~= "" then
+    table.insert(wrapped, current)
+  end
+  return wrapped
+end
+
+--- Render comment blocks inline below a buffer line using virt_lines.
+--- Multiple comments are stacked in order.
+---@param bufnr number
+---@param line_idx number  0-indexed anchor line
+---@param comments Comment[]
+---@param sign string
+---@param max_width number  maximum display width for comment text lines
+M.add_inline_comments = function(bufnr, line_idx, comments, sign, max_width)
+  local virt_lines = {}
+  for _, comment in ipairs(comments) do
+    local range = comment.start_line == comment.end_line and ("L" .. comment.start_line)
+      or ("L" .. comment.start_line .. "-" .. comment.end_line)
+    table.insert(virt_lines, {
+      { "  ┌─ ", "ReviewThemInlineCommentBorder" },
+      { sign .. " " .. range, "ReviewThemInlineComment" },
+      { " ─", "ReviewThemInlineCommentBorder" },
+    })
+    for _, text_line in ipairs(vim.split(comment.text, "\n", { plain = true })) do
+      for _, chunk in ipairs(wrap_line(text_line, max_width)) do
+        table.insert(virt_lines, {
+          { "  │ ", "ReviewThemInlineCommentBorder" },
+          { chunk, "ReviewThemInlineComment" },
+        })
+      end
+    end
+    table.insert(virt_lines, { { "  └─", "ReviewThemInlineCommentBorder" } })
+  end
+
+  vim.api.nvim_buf_set_extmark(bufnr, ns, line_idx, 0, {
+    virt_lines = virt_lines,
     priority = 20,
   })
 end
