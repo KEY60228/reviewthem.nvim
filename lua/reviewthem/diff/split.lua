@@ -201,6 +201,11 @@ M.set_closing_intentionally = function()
   closing_intentionally = true
 end
 
+--- Reset close-intentional flag (used as safety net if close is interrupted).
+M.reset_closing_intentionally = function()
+  closing_intentionally = false
+end
+
 --- Create or get a buffer for split view.
 ---@param name string
 ---@return number bufnr
