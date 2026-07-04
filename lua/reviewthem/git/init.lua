@@ -119,7 +119,18 @@ M.get_file_diff = function(base_ref, compare_ref, file_path, context_lines)
     cmd = string.format("git diff -U%d %s...%s -- %s", context_lines, vim.fn.shellescape(base_ref), vim.fn.shellescape(compare_ref), vim.fn.shellescape(file_path))
   end
 
-  return vim.fn.systemlist(cmd)
+  local result = vim.fn.systemlist(cmd)
+
+  if #result == 0 and (compare_ref == nil or compare_ref == "") then
+    local git_root = M.get_git_root()
+    if git_root then
+      local full_path = git_root .. "/" .. file_path
+      local no_index_cmd = string.format("git diff --no-index -U%d /dev/null %s", context_lines, vim.fn.shellescape(full_path))
+      result = vim.fn.systemlist(no_index_cmd)
+    end
+  end
+
+  return result
 end
 
 --- Get full file content at a specific ref.
