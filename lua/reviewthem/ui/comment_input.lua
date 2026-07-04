@@ -156,8 +156,9 @@ M.open = function(opts)
   -- Keymaps
   for _, mode in ipairs({ "i", "n" }) do
     vim.keymap.set(mode, confirm_key, confirm, { buffer = bufnr, nowait = true, silent = true })
-    vim.keymap.set(mode, cancel_key, cancel, { buffer = bufnr, nowait = true, silent = true })
   end
+  vim.keymap.set("n", cancel_key, cancel, { buffer = bufnr, nowait = true, silent = true })
+  vim.keymap.set("n", "q", cancel, { buffer = bufnr, nowait = true, silent = true })
 
   -- Move cursor to input and start insert
   vim.api.nvim_win_set_cursor(winnr, { input_start_line, 0 })
