@@ -260,22 +260,27 @@ M.render_file = function(session, file, old_winnr, new_winnr)
 
     -- Only show cursorline in focused window
     local bufnr = vim.api.nvim_win_get_buf(winnr)
-    vim.api.nvim_create_autocmd("WinEnter", {
-      buffer = bufnr,
-      callback = function()
-        if vim.api.nvim_win_is_valid(winnr) then
-          vim.wo[winnr].cursorline = true
-        end
-      end,
-    })
-    vim.api.nvim_create_autocmd("WinLeave", {
-      buffer = bufnr,
-      callback = function()
-        if vim.api.nvim_win_is_valid(winnr) then
-          vim.wo[winnr].cursorline = false
-        end
-      end,
-    })
+    if not vim.b[bufnr].reviewthem_cursorline_set then
+      vim.b[bufnr].reviewthem_cursorline_set = true
+      vim.api.nvim_create_autocmd("WinEnter", {
+        buffer = bufnr,
+        callback = function()
+          local win = vim.api.nvim_get_current_win()
+          if vim.api.nvim_win_is_valid(win) then
+            vim.wo[win].cursorline = true
+          end
+        end,
+      })
+      vim.api.nvim_create_autocmd("WinLeave", {
+        buffer = bufnr,
+        callback = function()
+          local win = vim.api.nvim_get_current_win()
+          if vim.api.nvim_win_is_valid(win) then
+            vim.wo[win].cursorline = false
+          end
+        end,
+      })
+    end
   end
 
   -- Apply decorations
