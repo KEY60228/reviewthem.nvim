@@ -45,6 +45,9 @@ M.setup_diff_keymaps = function()
         end
       end, "Focus file tree")
       map("n", km.close_review, "<cmd>ReviewThemPause<CR>", "Close/pause review")
+
+      -- Open real file
+      map("n", km.open_file, "<cmd>ReviewThemOpenFile<CR>", "Open file at cursor line")
     end,
   })
 end
