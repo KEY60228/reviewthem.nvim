@@ -27,6 +27,54 @@ local view_state = {
   session = nil,
 }
 
+--- Check whether the byte at 1-indexed position `pos` is a UTF-8 continuation byte.
+---@param s string
+---@param pos number
+---@return boolean
+local function is_continuation_byte(s, pos)
+  local b = string.byte(s, pos)
+  return b ~= nil and b >= 0x80 and b < 0xC0
+end
+
+--- Compute the differing span between an old and a new line.
+--- Finds the common prefix and suffix byte-wise, backing off to UTF-8
+--- character boundaries, and returns the middle span for each side as
+--- 0-indexed byte columns {start_col, end_col} (end exclusive).
+---@param old_str string
+---@param new_str string
+---@return table|nil old_span, table|nil new_span
+local function compute_word_diff(old_str, new_str)
+  if old_str == new_str then
+    return nil, nil
+  end
+
+  local old_len = #old_str
+  local new_len = #new_str
+  local min_len = math.min(old_len, new_len)
+
+  -- Common prefix length (in bytes)
+  local prefix = 0
+  while prefix < min_len and old_str:byte(prefix + 1) == new_str:byte(prefix + 1) do
+    prefix = prefix + 1
+  end
+  -- Don't split a multibyte character: back off to a boundary
+  while prefix > 0 and is_continuation_byte(old_str, prefix + 1) do
+    prefix = prefix - 1
+  end
+
+  -- Common suffix length (in bytes), not overlapping the prefix
+  local suffix = 0
+  while suffix < min_len - prefix and old_str:byte(old_len - suffix) == new_str:byte(new_len - suffix) do
+    suffix = suffix + 1
+  end
+  -- The suffix must start at a character boundary
+  while suffix > 0 and is_continuation_byte(old_str, old_len - suffix + 1) do
+    suffix = suffix - 1
+  end
+
+  return { prefix, old_len - suffix }, { prefix, new_len - suffix }
+end
+
 --- Build aligned old/new content for a single file.
 ---@param file DiffFile
 ---@return string[] old_lines, string[] new_lines, table[] old_map, table[] new_map
@@ -56,8 +104,8 @@ local function build_split_content(file)
       local hline = hunk_lines[i]
 
       if hline.type == "context" then
-        table.insert(old_lines, " " .. hline.content)
-        table.insert(new_lines, " " .. hline.content)
+        table.insert(old_lines, hline.content)
+        table.insert(new_lines, hline.content)
         table.insert(old_map, {
           type = "diff_line",
           file = file.path,
@@ -89,14 +137,21 @@ local function build_split_content(file)
         -- Align removes and adds
         local max_len = math.max(#removes, #adds)
         for j = 1, max_len do
+          -- Word-level diff for positionally paired remove/add lines
+          local old_span, new_span
+          if j <= #removes and j <= #adds then
+            old_span, new_span = compute_word_diff(removes[j].content, adds[j].content)
+          end
+
           if j <= #removes then
-            table.insert(old_lines, "-" .. removes[j].content)
+            table.insert(old_lines, removes[j].content)
             table.insert(old_map, {
               type = "diff_line",
               file = file.path,
               side = "old",
               lineno = removes[j].old_lineno,
               hunk_line = removes[j],
+              word_diff = old_span,
             })
           else
             table.insert(old_lines, "")
@@ -104,13 +159,14 @@ local function build_split_content(file)
           end
 
           if j <= #adds then
-            table.insert(new_lines, "+" .. adds[j].content)
+            table.insert(new_lines, adds[j].content)
             table.insert(new_map, {
               type = "diff_line",
               file = file.path,
               side = "new",
               lineno = adds[j].new_lineno,
               hunk_line = adds[j],
+              word_diff = new_span,
             })
           else
             table.insert(new_lines, "")
@@ -148,6 +204,10 @@ local function apply_split_decorations(bufnr, line_map, session)
       renderer.decorate_hunk_header(bufnr, line_idx)
     elseif entry.type == "diff_line" then
       renderer.decorate_line(bufnr, line_idx, entry.hunk_line)
+      if config.word_diff and entry.word_diff and entry.word_diff[1] < entry.word_diff[2] then
+        local hl_group = entry.side == "old" and "ReviewThemWordDelete" or "ReviewThemWordAdd"
+        renderer.add_word_diff(bufnr, line_idx, entry.word_diff[1], entry.word_diff[2], hl_group)
+      end
       local key = entry.file .. ":" .. entry.side .. ":" .. entry.lineno
       if comment_lookup[key] then
         renderer.add_comment_sign(bufnr, line_idx, config.comment_sign)
@@ -158,6 +218,25 @@ local function apply_split_decorations(bufnr, line_map, session)
       })
     end
   end
+end
+
+--- Enable treesitter syntax highlighting for a diff buffer based on the file path.
+--- Falls back silently when no parser is available (zero-dependency plugin).
+---@param bufnr number
+---@param path string
+local function attach_treesitter(bufnr, path)
+  -- Stop any highlighter left over from a previously rendered file
+  pcall(vim.treesitter.stop, bufnr)
+
+  local ft = vim.filetype.match({ filename = path })
+  if not ft then
+    return
+  end
+  local ok, lang = pcall(vim.treesitter.language.get_lang, ft)
+  if not ok or not lang then
+    return
+  end
+  pcall(vim.treesitter.start, bufnr, lang)
 end
 
 --- Prevent accidental close of diff buffer windows.
@@ -239,6 +318,10 @@ M.render_file = function(session, file, old_winnr, new_winnr)
   vim.bo[new_bufnr].buftype = "nofile"
   vim.bo[new_bufnr].swapfile = false
   vim.bo[new_bufnr].filetype = "reviewthem-diff"
+
+  -- Language syntax highlighting (best effort, requires a treesitter parser)
+  attach_treesitter(old_bufnr, file.path)
+  attach_treesitter(new_bufnr, file.path)
 
   -- Protect from accidental close
   protect_diff_buffer(old_bufnr)

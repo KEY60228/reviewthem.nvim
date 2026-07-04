@@ -9,6 +9,8 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 ## Features
 
 - **Split diff view** — Side-by-side old/new comparison with syntax highlighting
+- **Syntax highlighting** — Treesitter-based language highlighting in the diff view (works when a parser for the file's language is installed)
+- **Word-level diff** — The changed span within modified lines is highlighted on both sides
 - **File tree sidebar** — Browse changed files, track review progress
 - **Line-level comments** — Floating input window, supports multi-line ranges
 - **Session management** — Named sessions persisted as JSON, pause and resume anytime
@@ -142,6 +144,7 @@ require("reviewthem").setup({
   comment_sign = "💬",        -- sign shown on commented lines
   file_tree_width = 30,       -- sidebar width in columns
   auto_save = true,           -- auto-save session on changes
+  word_diff = true,           -- highlight changed spans within modified lines
   keymaps = {
     add_comment = "<leader>rc",
     confirm_comment = "<A-CR>",

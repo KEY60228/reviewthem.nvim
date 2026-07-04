@@ -26,6 +26,9 @@ external plugin dependencies.
 
 Features:
 - Split diff view (side-by-side old/new comparison)
+- Treesitter-based syntax highlighting in the diff view (when a parser
+  for the file's language is installed)
+- Word-level diff highlighting of the changed span within modified lines
 - File tree sidebar with review progress
 - Line-level comments with floating input
 - Named sessions with JSON persistence
@@ -72,6 +75,7 @@ Call the setup function with optional configuration: >lua
       comment_sign = "💬",
       file_tree_width = 30,
       auto_save = true,
+      word_diff = true,
       keymaps = {
         add_comment = "<leader>rc",
         confirm_comment = "<A-CR>",
@@ -193,6 +197,12 @@ file_tree_width~
 auto_save~
     Default: true
     Automatically save the session after changes (debounced 500ms).
+
+word_diff~
+    Default: true
+    Highlight the changed span within modified line pairs (word-level
+    diff) using |hl-DiffText| via the `ReviewThemWordAdd` and
+    `ReviewThemWordDelete` highlight groups.
 
 keymaps~
     Table of keymap bindings. Set any key to `""` to disable it.
