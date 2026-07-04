@@ -8,6 +8,8 @@ M.setup_highlights = function()
     ReviewThemAdd = { default = true, link = "DiffAdd" },
     ReviewThemDelete = { default = true, link = "DiffDelete" },
     ReviewThemChange = { default = true, link = "DiffChange" },
+    ReviewThemWordAdd = { default = true, link = "DiffText" },
+    ReviewThemWordDelete = { default = true, link = "DiffText" },
     ReviewThemHunkHeader = { default = true, bg = "#3b3b4f", fg = "#a0a0c0", italic = true },
     ReviewThemFileHeader = { default = true, bg = "#2a4a2a", fg = "#c0e0c0", bold = true },
     ReviewThemLineNrOld = { default = true, fg = "#e06060" },
@@ -68,6 +70,20 @@ M.decorate_line = function(bufnr, line_idx, hunk_line)
     virt_text = { { nr_text .. " ", nr_hl_group } },
     virt_text_pos = "inline",
     priority = 10,
+  })
+end
+
+--- Highlight the differing span within a changed line (word-level diff).
+---@param bufnr number
+---@param line_idx number  0-indexed line in buffer
+---@param start_col number  0-indexed byte column, inclusive
+---@param end_col number  0-indexed byte column, exclusive
+---@param hl_group string
+M.add_word_diff = function(bufnr, line_idx, start_col, end_col, hl_group)
+  vim.api.nvim_buf_set_extmark(bufnr, ns, line_idx, start_col, {
+    end_col = end_col,
+    hl_group = hl_group,
+    priority = 110, -- above treesitter highlights (100)
   })
 end
 

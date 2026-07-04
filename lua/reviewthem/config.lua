@@ -7,6 +7,7 @@ M.defaults = {
   format = {
     include_diff = true,
   },
+  word_diff = true,
   keymaps = {
     add_comment = "<leader>rc",
     confirm_comment = "<A-CR>",
