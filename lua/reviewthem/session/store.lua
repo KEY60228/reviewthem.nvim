@@ -93,13 +93,13 @@ M.list = function(project_root)
   local dir = get_project_dir(project_root)
   local sessions = {}
 
-  local handle = vim.loop.fs_scandir(dir)
+  local handle = vim.uv.fs_scandir(dir)
   if not handle then
     return sessions
   end
 
   while true do
-    local name, type = vim.loop.fs_scandir_next(handle)
+    local name, type = vim.uv.fs_scandir_next(handle)
     if not name then
       break
     end
