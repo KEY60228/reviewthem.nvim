@@ -89,11 +89,16 @@ register_idle_commands = function()
     nargs = "*",
     complete = function(arg_lead, cmdline)
       local args = vim.split(cmdline, "%s+", { trimempty = true })
-      local n = #args
-      if cmdline:match("%s$") then
-        n = n + 1
+      local positional = 0
+      for i = 2, #args do
+        if not args[i]:match("^%-%-name=") then
+          positional = positional + 1
+        end
       end
-      if n > 3 then
+      if cmdline:match("%s$") and not arg_lead:match("^%-%-name=") then
+        positional = positional + 1
+      end
+      if positional > 2 then
         return {}
       end
       local matches = {}
