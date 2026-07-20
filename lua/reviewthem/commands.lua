@@ -247,6 +247,7 @@ register_session_commands = function()
   vim.api.nvim_create_user_command("ReviewThemAddComment", function(cmd)
     local state = require("reviewthem.session.state")
     local session = state.get_active()
+    if not session then return end
     local ui_mod = require("reviewthem.ui")
     local context = ui_mod.get_cursor_context()
 
@@ -379,6 +380,7 @@ register_session_commands = function()
   vim.api.nvim_create_user_command("ReviewThemShowComments", function()
     local state = require("reviewthem.session.state")
     local session = state.get_active()
+    if not session then return end
     local ui_mod = require("reviewthem.ui")
 
     local comments = session.comments
@@ -463,6 +465,7 @@ register_session_commands = function()
     else
       local state = require("reviewthem.session.state")
       local session = state.get_active()
+      if not session then return end
       local ui_mod = require("reviewthem.ui")
       file_tree.open(session, function(file_path)
         ui_mod.jump_to_file(file_path)
