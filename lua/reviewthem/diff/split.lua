@@ -338,6 +338,33 @@ M.get_cursor_context = function()
   }
 end
 
+--- Get context for a specific buffer row (without moving the cursor).
+---@param bufnr number
+---@param row number 1-based row
+---@return table|nil
+M.get_line_context = function(bufnr, row)
+  local line_map
+  if bufnr == view_state.old_bufnr then
+    line_map = view_state.line_map_old
+  elseif bufnr == view_state.new_bufnr then
+    line_map = view_state.line_map_new
+  else
+    return nil
+  end
+
+  local entry = line_map[row]
+  if not entry or entry.type ~= "diff_line" then
+    return nil
+  end
+
+  return {
+    file = entry.file,
+    side = entry.side,
+    lineno = entry.lineno,
+    hunk_line = entry.hunk_line,
+  }
+end
+
 --- Get the current file being viewed.
 ---@return string|nil
 M.get_current_file = function()

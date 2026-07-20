@@ -258,7 +258,10 @@ register_session_commands = function()
     local start_line = context.lineno
     local end_line = context.lineno
     if cmd.range == 2 then
-      end_line = start_line + (cmd.line2 - cmd.line1)
+      local end_context = ui_mod.get_line_context(vim.api.nvim_get_current_buf(), cmd.line2)
+      if end_context and end_context.side == context.side then
+        end_line = end_context.lineno
+      end
     end
 
     local prefix = context.hunk_line.type == "add" and "+" or

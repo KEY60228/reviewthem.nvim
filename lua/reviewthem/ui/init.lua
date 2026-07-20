@@ -160,6 +160,14 @@ M.get_cursor_context = function()
   return diff_view.get_cursor_context()
 end
 
+--- Get context for a specific buffer row.
+---@param bufnr number
+---@param row number 1-based row
+---@return table|nil
+M.get_line_context = function(bufnr, row)
+  return diff_view.get_line_context(bufnr, row)
+end
+
 --- Check if the UI is open.
 ---@return boolean
 M.is_open = function()
