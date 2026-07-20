@@ -147,6 +147,17 @@ M.open = function(items, opts, on_choice)
       vim.bo[bufnr].modifiable = true
       vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
       vim.bo[bufnr].modifiable = false
+      if opts.highlight_item then
+        local hl_ns = vim.api.nvim_create_namespace("reviewthem_picker_hl")
+        vim.api.nvim_buf_clear_namespace(bufnr, hl_ns, 0, -1)
+        local prefix_len = 2
+        for i, item in ipairs(items) do
+          local highlights = opts.highlight_item(item)
+          for _, hl in ipairs(highlights) do
+            pcall(vim.api.nvim_buf_add_highlight, bufnr, hl_ns, hl[1], i - 1, prefix_len + hl[2], prefix_len + hl[3])
+          end
+        end
+      end
       -- Adjust cursor if we deleted the last line
       if idx > #items then
         vim.api.nvim_win_set_cursor(winnr, { #items, 0 })
