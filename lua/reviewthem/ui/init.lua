@@ -91,31 +91,38 @@ M.close = function()
   local split = require("reviewthem.diff.split")
   split.set_closing_intentionally()
 
-  -- Ensure a surviving window by switching one diff pane to a blank buffer
-  -- before deleting scratch buffers (which force-close their windows).
-  local survivor = find_win_by_buf_name("reviewthem://new")
-    or find_win_by_buf_name("reviewthem://old")
-  if survivor and vim.api.nvim_win_is_valid(survivor) then
-    local buf = vim.api.nvim_create_buf(true, false)
-    vim.api.nvim_win_set_buf(survivor, buf)
-  end
+  local ok, err = pcall(function()
+    -- Ensure a surviving window by switching one diff pane to a blank buffer
+    -- before deleting scratch buffers (which force-close their windows).
+    local survivor = find_win_by_buf_name("reviewthem://new")
+      or find_win_by_buf_name("reviewthem://old")
+    if survivor and vim.api.nvim_win_is_valid(survivor) then
+      local buf = vim.api.nvim_create_buf(true, false)
+      vim.api.nvim_win_set_buf(survivor, buf)
+    end
 
-  file_tree.close()
-  diff_view.close()
+    file_tree.close()
+    diff_view.close()
 
-  -- Close leftover empty windows from deleted buffers
-  for _, winnr in ipairs(vim.api.nvim_list_wins()) do
-    if vim.api.nvim_win_is_valid(winnr) and #vim.api.nvim_list_wins() > 1 then
-      local buf = vim.api.nvim_win_get_buf(winnr)
-      local name = vim.api.nvim_buf_get_name(buf)
-      if name == "" and vim.api.nvim_buf_line_count(buf) <= 1 then
-        pcall(vim.api.nvim_win_close, winnr, true)
+    -- Close leftover empty windows from deleted buffers
+    for _, winnr in ipairs(vim.api.nvim_list_wins()) do
+      if vim.api.nvim_win_is_valid(winnr) and #vim.api.nvim_list_wins() > 1 then
+        local buf = vim.api.nvim_win_get_buf(winnr)
+        local name = vim.api.nvim_buf_get_name(buf)
+        if name == "" and vim.api.nvim_buf_line_count(buf) <= 1 then
+          pcall(vim.api.nvim_win_close, winnr, true)
+        end
       end
     end
-  end
 
-  active_session = nil
-  restore_nvimtree()
+    active_session = nil
+    restore_nvimtree()
+  end)
+
+  if not ok then
+    split.reset_closing_intentionally()
+    vim.notify("reviewthem.nvim: Error during close: " .. tostring(err), vim.log.levels.ERROR)
+  end
 end
 
 --- Refresh all UI components.
