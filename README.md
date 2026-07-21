@@ -11,6 +11,7 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 - **Split diff view** — Side-by-side old/new comparison with syntax highlighting
 - **File tree sidebar** — Browse changed files, track review progress
 - **Line-level comments** — Floating input window, supports multi-line ranges
+- **Inline comment display** — Comments are rendered as virtual text blocks right below the commented lines
 - **Session management** — Named sessions persisted as JSON, pause and resume anytime
 - **Markdown export** — Copy review output to clipboard, ready for coding agents
 - **Context-aware commands** — Only relevant commands are available at each stage
@@ -140,6 +141,7 @@ All options are optional — defaults are shown below:
 ```lua
 require("reviewthem").setup({
   comment_sign = "💬",        -- sign shown on commented lines
+  inline_comments = true,     -- show comment text inline below commented lines
   file_tree_width = 30,       -- sidebar width in columns
   auto_save = true,           -- auto-save session on changes
   keymaps = {

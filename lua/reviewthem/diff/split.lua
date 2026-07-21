@@ -131,14 +131,34 @@ end
 local function apply_split_decorations(bufnr, line_map, session)
   renderer.clear(bufnr)
 
+  local config = require("reviewthem.config").get()
+
   local comment_lookup = {}
+  local inline_lookup = {}
   for _, c in ipairs(session.comments) do
     for l = c.start_line, c.end_line do
       comment_lookup[c.file .. ":" .. c.side .. ":" .. l] = true
     end
+    if config.inline_comments then
+      local key = c.file .. ":" .. c.side .. ":" .. c.end_line
+      inline_lookup[key] = inline_lookup[key] or {}
+      table.insert(inline_lookup[key], c)
+    end
+  end
+  for _, list in pairs(inline_lookup) do
+    table.sort(list, function(a, b)
+      if a.start_line ~= b.start_line then
+        return a.start_line < b.start_line
+      end
+      return tostring(a.id) < tostring(b.id)
+    end)
   end
 
-  local config = require("reviewthem.config").get()
+  -- Wrap width for inline comment text: keep blocks readable without
+  -- overflowing the window.
+  local winnr = vim.fn.bufwinid(bufnr)
+  local win_width = winnr ~= -1 and vim.api.nvim_win_get_width(winnr) or vim.o.columns
+  local wrap_width = math.max(20, math.min(80, win_width - 10))
 
   for i, entry in ipairs(line_map) do
     local line_idx = i - 1
@@ -151,6 +171,10 @@ local function apply_split_decorations(bufnr, line_map, session)
       local key = entry.file .. ":" .. entry.side .. ":" .. entry.lineno
       if comment_lookup[key] then
         renderer.add_comment_sign(bufnr, line_idx, config.comment_sign)
+      end
+      local inline_comments = inline_lookup[key]
+      if inline_comments then
+        renderer.add_inline_comments(bufnr, line_idx, inline_comments, config.comment_sign, wrap_width)
       end
     elseif entry.type == "padding" then
       vim.api.nvim_buf_set_extmark(bufnr, renderer.get_namespace(), line_idx, 0, {
