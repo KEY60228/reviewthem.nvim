@@ -4,6 +4,7 @@ M.defaults = {
   comment_sign = "💬",
   file_tree_width = 30,
   auto_save = true,
+  word_diff = true,
   keymaps = {
     add_comment = "<leader>rc",
     confirm_comment = "<A-CR>",
