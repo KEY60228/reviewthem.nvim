@@ -81,6 +81,7 @@ Call the setup function with optional configuration: >lua
         show_comments = "<leader>rl",
         focus_tree = "<leader>re",
         close_review = "<leader>rq",
+        open_file = "gf",
       },
     })
 <
@@ -155,6 +156,13 @@ DURING AN ACTIVE REVIEW ~
 :ReviewThemTree
     Toggle the file tree sidebar.
 
+                                                         *:ReviewThemOpenFile*
+:ReviewThemOpenFile
+    Open the file under the cursor in a new tab, at the line under the
+    cursor. On the new side of a working-tree review this opens the
+    actual file; otherwise a readonly view of the file at the relevant
+    git ref is shown (press `q` there to return to the review).
+
 ==============================================================================
 6. MAPPINGS                                                 *reviewthem-mappings*
 
@@ -167,6 +175,7 @@ during a review session. All keys are configurable via |reviewthem-configuration
     <leader>rl      Show all comments
     <leader>re      Focus file tree
     <leader>rq      Pause / close review
+    gf              Open the file under the cursor in a new tab
 
 In the comment input floating window:
 
