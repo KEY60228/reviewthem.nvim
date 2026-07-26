@@ -201,6 +201,17 @@ M.set_closing_intentionally = function()
   closing_intentionally = true
 end
 
+--- Set a window option for one window only.
+--- `vim.wo[winnr].opt = value` behaves like `:set` for window-local options, so
+--- it would also overwrite the user's global value (and leak into windows opened
+--- later, e.g. the tabs created by :ReviewThemOpenFile).
+---@param winnr number
+---@param name string
+---@param value any
+local function set_win_local(winnr, name, value)
+  pcall(vim.api.nvim_set_option_value, name, value, { win = winnr, scope = "local" })
+end
+
 --- Create or get a buffer for split view.
 ---@param name string
 ---@return number bufnr
@@ -250,13 +261,13 @@ M.render_file = function(session, file, old_winnr, new_winnr)
 
   -- Set window options
   for _, winnr in ipairs({ old_winnr, new_winnr }) do
-    vim.wo[winnr].number = false
-    vim.wo[winnr].relativenumber = false
-    vim.wo[winnr].signcolumn = "no"
-    vim.wo[winnr].wrap = false
-    vim.wo[winnr].cursorline = true
-    vim.wo[winnr].scrollbind = true
-    vim.wo[winnr].cursorbind = true
+    set_win_local(winnr, "number", false)
+    set_win_local(winnr, "relativenumber", false)
+    set_win_local(winnr, "signcolumn", "no")
+    set_win_local(winnr, "wrap", false)
+    set_win_local(winnr, "cursorline", true)
+    set_win_local(winnr, "scrollbind", true)
+    set_win_local(winnr, "cursorbind", true)
 
     -- Only show cursorline in focused window
     local bufnr = vim.api.nvim_win_get_buf(winnr)
@@ -264,7 +275,7 @@ M.render_file = function(session, file, old_winnr, new_winnr)
       buffer = bufnr,
       callback = function()
         if vim.api.nvim_win_is_valid(winnr) then
-          vim.wo[winnr].cursorline = true
+          set_win_local(winnr, "cursorline", true)
         end
       end,
     })
@@ -272,7 +283,7 @@ M.render_file = function(session, file, old_winnr, new_winnr)
       buffer = bufnr,
       callback = function()
         if vim.api.nvim_win_is_valid(winnr) then
-          vim.wo[winnr].cursorline = false
+          set_win_local(winnr, "cursorline", false)
         end
       end,
     })

@@ -1,28 +1,95 @@
 local M = {}
 
---- Clamp a line number to the buffer's line count and move the cursor there.
+--- Window options the diff panes force on their own windows. A new tab page
+--- inherits the window options of the window it is opened from, so they have to
+--- be restored to the user's global values for the file view.
+---@type string[]
+local inherited_win_opts = { "number", "relativenumber", "signcolumn", "wrap", "cursorline" }
+
+--- Reset diff-pane window options inherited by a new tab to their global values
+--- (the equivalent of `:setlocal {option}<`).
 ---@param winnr number
----@param lineno number
-local function set_cursor_clamped(winnr, lineno)
+local function restore_win_opts(winnr)
+  for _, name in ipairs(inherited_win_opts) do
+    local ok, global = pcall(vim.api.nvim_get_option_value, name, { scope = "global" })
+    if ok then
+      pcall(vim.api.nvim_set_option_value, name, global, { win = winnr, scope = "local" })
+    end
+  end
+end
+
+--- Short, human-readable label for a resolved git ref.
+---@param ref string
+---@return string
+local function ref_label(ref)
+  if ref == ":0" then
+    return "index"
+  end
+  if #ref == 40 and ref:match("^%x+$") then
+    return ref:sub(1, 8)
+  end
+  return ref
+end
+
+--- Find a buffer by exact name (vim.fn.bufnr() would treat the name as a pattern).
+---@param name string
+---@return number|nil bufnr
+local function find_buf_by_name(name)
+  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_get_name(bufnr) == name then
+      return bufnr
+    end
+  end
+  return nil
+end
+
+--- The root the diff paths are relative to.
+---@param session ReviewSession
+---@return string|nil
+local function repo_root(session)
+  if session.project_root and session.project_root ~= "" then
+    return session.project_root
+  end
+  return require("reviewthem.git").get_git_root()
+end
+
+--- Move the cursor to a line, clamped to the buffer, opening folds and centering.
+---@param winnr number
+---@param lineno number|nil
+---@param file_path string
+local function set_cursor_clamped(winnr, lineno, file_path)
   local bufnr = vim.api.nvim_win_get_buf(winnr)
   local line_count = vim.api.nvim_buf_line_count(bufnr)
-  local target = math.max(1, math.min(lineno or 1, line_count))
+  local wanted = lineno or 1
+  local target = math.max(1, math.min(wanted, line_count))
   vim.api.nvim_win_set_cursor(winnr, { target, 0 })
+  vim.api.nvim_win_call(winnr, function()
+    vim.cmd("normal! zvzz")
+  end)
+  if target ~= wanted then
+    vim.notify(
+      string.format(
+        "reviewthem.nvim: '%s' has %d lines — showing line %d instead of %d.",
+        file_path, line_count, target, wanted
+      ),
+      vim.log.levels.WARN
+    )
+  end
 end
 
 --- Open the working-tree version of a file in a new tab.
+---@param session ReviewSession
 ---@param file_path string  Path relative to the git root
 ---@param lineno number
 ---@return boolean ok
-local function open_working_tree_file(file_path, lineno)
-  local git = require("reviewthem.git")
-  local git_root = git.get_git_root()
-  if not git_root then
+local function open_working_tree_file(session, file_path, lineno)
+  local root = repo_root(session)
+  if not root then
     vim.notify("reviewthem.nvim: Not in a git repository.", vim.log.levels.ERROR)
     return false
   end
 
-  local full_path = git_root .. "/" .. file_path
+  local full_path = root .. "/" .. file_path
   if vim.fn.filereadable(full_path) == 0 then
     vim.notify(
       string.format("reviewthem.nvim: '%s' does not exist in the working tree.", file_path),
@@ -32,7 +99,8 @@ local function open_working_tree_file(file_path, lineno)
   end
 
   vim.cmd("tabedit " .. vim.fn.fnameescape(full_path))
-  set_cursor_clamped(0, lineno)
+  restore_win_opts(0)
+  set_cursor_clamped(0, lineno, file_path)
   return true
 end
 
@@ -43,18 +111,19 @@ end
 ---@return boolean ok
 local function open_ref_file(ref, file_path, lineno)
   local git = require("reviewthem.git")
+  local label = ref_label(ref)
   local lines = git.get_file_content(ref, file_path)
   if not lines then
     vim.notify(
-      string.format("reviewthem.nvim: '%s' does not exist at '%s'.", file_path, ref),
+      string.format("reviewthem.nvim: '%s' does not exist at '%s'.", file_path, label),
       vim.log.levels.WARN
     )
     return false
   end
 
-  local bufname = string.format("reviewthem://%s:%s", ref, file_path)
-  local bufnr = vim.fn.bufnr(bufname)
-  if bufnr == -1 or not vim.api.nvim_buf_is_valid(bufnr) then
+  local bufname = string.format("reviewthem://%s:%s", label, file_path)
+  local bufnr = find_buf_by_name(bufname)
+  if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
     bufnr = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_name(bufnr, bufname)
   end
@@ -65,7 +134,8 @@ local function open_ref_file(ref, file_path, lineno)
   vim.bo[bufnr].buftype = "nofile"
   vim.bo[bufnr].swapfile = false
 
-  local filetype = vim.filetype.match({ filename = file_path })
+  -- Pass the buffer too, so content-based detection (shebangs) works
+  local filetype = vim.filetype.match({ buf = bufnr, filename = file_path })
   if filetype then
     vim.bo[bufnr].filetype = filetype
   end
@@ -79,12 +149,18 @@ local function open_ref_file(ref, file_path, lineno)
     pcall(vim.api.nvim_buf_delete, placeholder, { force = true })
   end
 
-  set_cursor_clamped(0, lineno)
+  restore_win_opts(0)
+  set_cursor_clamped(0, lineno, file_path)
 
   -- q closes the tab and returns to the review tab
   vim.keymap.set("n", "q", function()
     if #vim.api.nvim_list_tabpages() > 1 then
       vim.cmd("tabclose")
+    else
+      vim.notify(
+        "reviewthem.nvim: This is the only tab page — use :bdelete to close this view.",
+        vim.log.levels.WARN
+      )
     end
   end, { buffer = bufnr, nowait = true, silent = true, desc = "Close file view" })
 
@@ -92,8 +168,8 @@ local function open_ref_file(ref, file_path, lineno)
 end
 
 --- Open the real file for the diff line under the cursor in a new tab.
---- Working-tree reviews open the actual file; ref-based sides open a
---- readonly scratch buffer with the content at the relevant ref.
+--- Sides showing the working tree open the actual file; the others open a
+--- readonly scratch buffer with the content the diff was generated from.
 M.open_at_cursor = function()
   local ui = require("reviewthem.ui")
   local context = ui.get_cursor_context()
@@ -109,16 +185,11 @@ M.open_at_cursor = function()
     return
   end
 
-  if context.side == "new" and (session.compare_ref == nil or session.compare_ref == "") then
-    -- Working-tree review: open the actual file
-    open_working_tree_file(context.file, context.lineno)
+  local git = require("reviewthem.git")
+  local ref = git.resolve_side_ref(session.base_ref, session.compare_ref, context.side)
+  if ref == nil then
+    open_working_tree_file(session, context.file, context.lineno)
   else
-    local ref
-    if context.side == "new" then
-      ref = session.compare_ref
-    else
-      ref = session.base_ref or "HEAD"
-    end
     open_ref_file(ref, context.file, context.lineno)
   end
 end

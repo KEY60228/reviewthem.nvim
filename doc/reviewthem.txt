@@ -159,9 +159,10 @@ DURING AN ACTIVE REVIEW ~
                                                          *:ReviewThemOpenFile*
 :ReviewThemOpenFile
     Open the file under the cursor in a new tab, at the line under the
-    cursor. On the new side of a working-tree review this opens the
-    actual file; otherwise a readonly view of the file at the relevant
-    git ref is shown (press `q` there to return to the review).
+    cursor. When the side under the cursor shows the working tree this
+    opens the actual file; otherwise a readonly view of the content the
+    diff was generated from (the index, the merge base, or the compare
+    ref) is shown (press `q` there to return to the review).
 
 ==============================================================================
 6. MAPPINGS                                                 *reviewthem-mappings*

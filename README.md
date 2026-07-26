@@ -120,7 +120,7 @@ Default mappings in diff buffers (customizable in setup):
 | `<leader>rq` | Pause / close review |
 | `gf` | Open the file under the cursor in a new tab |
 
-`gf` (`:ReviewThemOpenFile`) opens the version shown on the side under the cursor: on the new side of a working-tree review it opens the actual file, otherwise it opens a readonly view of the file at the relevant git ref (press `q` there to return to the review).
+`gf` (`:ReviewThemOpenFile`) opens the version shown on the side under the cursor: when that side is the working tree it opens the actual file, otherwise it opens a readonly view of the content the diff was generated from — the index, the merge base, or the compare ref (press `q` there to return to the review).
 
 Comment input window:
 
