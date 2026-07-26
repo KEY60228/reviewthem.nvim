@@ -190,8 +190,9 @@ comment_sign~
 inline_comments~
     Default: true
     Render the full comment text inline below the commented line in the
-    diff view using virtual lines. Set to false to only show the
-    |comment_sign| indicator.
+    diff view using virtual lines. Blank filler lines are added to the
+    opposite pane so both sides stay aligned. Set to false to only show
+    the comment_sign indicator.
 
 file_tree_width~
     Default: 30
