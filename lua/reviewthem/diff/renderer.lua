@@ -2,6 +2,12 @@ local M = {}
 
 local ns = vim.api.nvim_create_namespace("reviewthem_diff")
 
+--- Extmark priorities. Treesitter highlights use 100, so the add/remove line
+--- background stays below it (syntax colors keep their foreground) and the
+--- word-level diff span sits above it.
+M.PRIORITY_LINE = 90
+M.PRIORITY_WORD = 200
+
 --- Define highlight groups.
 M.setup_highlights = function()
   local groups = {
@@ -57,10 +63,20 @@ M.decorate_line = function(bufnr, line_idx, hunk_line)
     nr_hl_group = "ReviewThemLineNrContext"
   end
 
-  -- Line highlight
+  -- Line highlight.
+  --
+  -- Painted as a character range that spans the end of the line (`hl_eol`
+  -- extends it across the rest of the screen line) instead of
+  -- `line_hl_group`: `line_hl_group` ignores `priority` and hides any
+  -- `hl_group` extmark on the same line, which would swallow the
+  -- word-level diff span.
   if hl_group then
     vim.api.nvim_buf_set_extmark(bufnr, ns, line_idx, 0, {
-      line_hl_group = hl_group,
+      end_row = line_idx + 1,
+      end_col = 0,
+      hl_group = hl_group,
+      hl_eol = true,
+      priority = M.PRIORITY_LINE,
     })
   end
 
@@ -83,7 +99,7 @@ M.add_word_diff = function(bufnr, line_idx, start_col, end_col, hl_group)
   vim.api.nvim_buf_set_extmark(bufnr, ns, line_idx, start_col, {
     end_col = end_col,
     hl_group = hl_group,
-    priority = 110, -- above treesitter highlights (100)
+    priority = M.PRIORITY_WORD,
   })
 end
 

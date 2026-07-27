@@ -8,8 +8,8 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 
 ## Features
 
-- **Split diff view** — Side-by-side old/new comparison with syntax highlighting
-- **Syntax highlighting** — Treesitter-based language highlighting in the diff view (works when a parser for the file's language is installed)
+- **Split diff view** — Side-by-side old/new comparison
+- **Syntax highlighting** — Treesitter-based language highlighting in the diff view (works when a parser for the file's language is installed; the buffer holds hunks rather than whole files, so highlighting can be imperfect)
 - **Word-level diff** — The changed span within modified lines is highlighted on both sides
 - **File tree sidebar** — Browse changed files, track review progress
 - **Line-level comments** — Floating input window, supports multi-line ranges
