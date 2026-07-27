@@ -27,6 +27,11 @@ local view_state = {
   session = nil,
 }
 
+--- Largest share of a line the changed span may cover for word-level
+--- highlighting to still be useful. When both sides are above this, the lines
+--- have little in common and the whole-line highlight already says so.
+local WORD_DIFF_MAX_RATIO = 0.6
+
 --- Check whether the byte at 1-indexed position `pos` is a UTF-8 continuation byte.
 ---@param s string
 ---@param pos number
@@ -70,6 +75,19 @@ local function compute_word_diff(old_str, new_str)
   -- The suffix must start at a character boundary
   while suffix > 0 and is_continuation_byte(old_str, old_len - suffix + 1) do
     suffix = suffix - 1
+  end
+
+  -- Lines are paired by position within a hunk, so a remove/add pair is not
+  -- necessarily a rewrite of the same line. When the span covers most of both
+  -- sides they are better treated as unrelated: highlighting nearly the whole
+  -- line only adds noise.
+  local old_changed = old_len - suffix - prefix
+  local new_changed = new_len - suffix - prefix
+  if
+    old_changed > old_len * WORD_DIFF_MAX_RATIO
+    and new_changed > new_len * WORD_DIFF_MAX_RATIO
+  then
+    return nil, nil
   end
 
   return { prefix, old_len - suffix }, { prefix, new_len - suffix }
@@ -220,14 +238,22 @@ local function apply_split_decorations(bufnr, line_map, session)
   end
 end
 
+--- Stop the treesitter highlighter left over from a previously rendered file.
+--- Called before the buffer content is replaced so the outgoing parser does
+--- not re-parse lines it is about to lose.
+---@param bufnr number
+local function detach_treesitter(bufnr)
+  pcall(vim.treesitter.stop, bufnr)
+end
+
 --- Enable treesitter syntax highlighting for a diff buffer based on the file path.
 --- Falls back silently when no parser is available (zero-dependency plugin).
+---
+--- The buffer holds hunks rather than the whole file, so the parse is of
+--- incomplete code and highlighting can be imperfect.
 ---@param bufnr number
 ---@param path string
 local function attach_treesitter(bufnr, path)
-  -- Stop any highlighter left over from a previously rendered file
-  pcall(vim.treesitter.stop, bufnr)
-
   local ft = vim.filetype.match({ filename = path })
   if not ft then
     return
@@ -302,6 +328,10 @@ M.render_file = function(session, file, old_winnr, new_winnr)
 
   local old_bufnr = get_or_create_buf("reviewthem://old")
   local new_bufnr = get_or_create_buf("reviewthem://new")
+
+  -- Drop the previous file's highlighters before the content changes
+  detach_treesitter(old_bufnr)
+  detach_treesitter(new_bufnr)
 
   -- Fill old buffer
   vim.bo[old_bufnr].modifiable = true

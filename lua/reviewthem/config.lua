@@ -17,7 +17,7 @@ M.defaults = {
   },
 }
 
-M.options = {}
+M.options = vim.deepcopy(M.defaults)
 
 ---@param opts table|nil
 M.setup = function(opts)
