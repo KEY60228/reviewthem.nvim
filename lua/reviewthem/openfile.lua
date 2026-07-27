@@ -1,23 +1,5 @@
 local M = {}
 
---- Window options the diff panes force on their own windows. A new tab page
---- inherits the window options of the window it is opened from, so they have to
---- be restored to the user's global values for the file view.
----@type string[]
-local inherited_win_opts = { "number", "relativenumber", "signcolumn", "wrap", "cursorline" }
-
---- Reset diff-pane window options inherited by a new tab to their global values
---- (the equivalent of `:setlocal {option}<`).
----@param winnr number
-local function restore_win_opts(winnr)
-  for _, name in ipairs(inherited_win_opts) do
-    local ok, global = pcall(vim.api.nvim_get_option_value, name, { scope = "global" })
-    if ok then
-      pcall(vim.api.nvim_set_option_value, name, global, { win = winnr, scope = "local" })
-    end
-  end
-end
-
 --- Short, human-readable label for a resolved git ref.
 ---@param ref string
 ---@return string
@@ -99,7 +81,6 @@ local function open_working_tree_file(session, file_path, lineno)
   end
 
   vim.cmd("tabedit " .. vim.fn.fnameescape(full_path))
-  restore_win_opts(0)
   set_cursor_clamped(0, lineno, file_path)
   return true
 end
@@ -149,7 +130,6 @@ local function open_ref_file(ref, file_path, lineno)
     pcall(vim.api.nvim_buf_delete, placeholder, { force = true })
   end
 
-  restore_win_opts(0)
   set_cursor_clamped(0, lineno, file_path)
 
   -- q closes the tab and returns to the review tab

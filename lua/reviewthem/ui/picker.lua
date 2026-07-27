@@ -1,3 +1,5 @@
+local util = require("reviewthem.util")
+
 local M = {}
 
 --- Open a floating picker window.
@@ -62,18 +64,18 @@ M.open = function(items, opts, on_choice)
     title_pos = title and "center" or nil,
   })
 
-  vim.wo[winnr].cursorline = true
-  vim.wo[winnr].wrap = false
-  vim.wo[winnr].scrollbind = false
-  vim.wo[winnr].cursorbind = false
+  util.set_win_local(winnr, "cursorline", true)
+  util.set_win_local(winnr, "wrap", false)
+  util.set_win_local(winnr, "scrollbind", false)
+  util.set_win_local(winnr, "cursorbind", false)
   vim.api.nvim_win_set_cursor(winnr, { 1, 0 })
 
   -- Suppress cursorline in all background windows while picker is open
   local saved_cursorlines = {}
   for _, w in ipairs(vim.api.nvim_list_wins()) do
     if w ~= winnr then
-      saved_cursorlines[w] = vim.wo[w].cursorline
-      vim.wo[w].cursorline = false
+      saved_cursorlines[w] = util.get_win_local(w, "cursorline")
+      util.set_win_local(w, "cursorline", false)
     end
   end
 
@@ -93,7 +95,7 @@ M.open = function(items, opts, on_choice)
     -- Restore cursorline state
     for w, val in pairs(saved_cursorlines) do
       if vim.api.nvim_win_is_valid(w) then
-        vim.wo[w].cursorline = val
+        util.set_win_local(w, "cursorline", val)
       end
     end
   end

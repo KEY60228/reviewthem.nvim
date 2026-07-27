@@ -1,3 +1,5 @@
+local util = require("reviewthem.util")
+
 local M = {}
 
 ---@class CommentInputState
@@ -65,8 +67,8 @@ M.open = function(opts)
     title_pos = "center",
   })
 
-  vim.wo[winnr].wrap = true
-  vim.wo[winnr].linebreak = true
+  util.set_win_local(winnr, "wrap", true)
+  util.set_win_local(winnr, "linebreak", true)
 
   -- Build content: preview + separator + input area
   local content = {}
