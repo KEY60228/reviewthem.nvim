@@ -2,12 +2,20 @@ local M = {}
 
 local ns = vim.api.nvim_create_namespace("reviewthem_diff")
 
+--- Extmark priorities. Treesitter highlights use 100, so the add/remove line
+--- background stays below it (syntax colors keep their foreground) and the
+--- word-level diff span sits above it.
+M.PRIORITY_LINE = 90
+M.PRIORITY_WORD = 200
+
 --- Define highlight groups.
 M.setup_highlights = function()
   local groups = {
     ReviewThemAdd = { default = true, link = "DiffAdd" },
     ReviewThemDelete = { default = true, link = "DiffDelete" },
     ReviewThemChange = { default = true, link = "DiffChange" },
+    ReviewThemWordAdd = { default = true, link = "DiffText" },
+    ReviewThemWordDelete = { default = true, link = "DiffText" },
     ReviewThemHunkHeader = { default = true, bg = "#3b3b4f", fg = "#a0a0c0", italic = true },
     ReviewThemFileHeader = { default = true, bg = "#2a4a2a", fg = "#c0e0c0", bold = true },
     ReviewThemLineNrOld = { default = true, fg = "#e06060" },
@@ -55,10 +63,20 @@ M.decorate_line = function(bufnr, line_idx, hunk_line)
     nr_hl_group = "ReviewThemLineNrContext"
   end
 
-  -- Line highlight
+  -- Line highlight.
+  --
+  -- Painted as a character range that spans the end of the line (`hl_eol`
+  -- extends it across the rest of the screen line) instead of
+  -- `line_hl_group`: `line_hl_group` ignores `priority` and hides any
+  -- `hl_group` extmark on the same line, which would swallow the
+  -- word-level diff span.
   if hl_group then
     vim.api.nvim_buf_set_extmark(bufnr, ns, line_idx, 0, {
-      line_hl_group = hl_group,
+      end_row = line_idx + 1,
+      end_col = 0,
+      hl_group = hl_group,
+      hl_eol = true,
+      priority = M.PRIORITY_LINE,
     })
   end
 
@@ -68,6 +86,20 @@ M.decorate_line = function(bufnr, line_idx, hunk_line)
     virt_text = { { nr_text .. " ", nr_hl_group } },
     virt_text_pos = "inline",
     priority = 10,
+  })
+end
+
+--- Highlight the differing span within a changed line (word-level diff).
+---@param bufnr number
+---@param line_idx number  0-indexed line in buffer
+---@param start_col number  0-indexed byte column, inclusive
+---@param end_col number  0-indexed byte column, exclusive
+---@param hl_group string
+M.add_word_diff = function(bufnr, line_idx, start_col, end_col, hl_group)
+  vim.api.nvim_buf_set_extmark(bufnr, ns, line_idx, start_col, {
+    end_col = end_col,
+    hl_group = hl_group,
+    priority = M.PRIORITY_WORD,
   })
 end
 

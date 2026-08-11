@@ -4,6 +4,7 @@ M.defaults = {
   comment_sign = "💬",
   file_tree_width = 30,
   auto_save = true,
+  word_diff = true,
   keymaps = {
     add_comment = "<leader>rc",
     confirm_comment = "<A-CR>",
@@ -16,7 +17,7 @@ M.defaults = {
   },
 }
 
-M.options = {}
+M.options = vim.deepcopy(M.defaults)
 
 ---@param opts table|nil
 M.setup = function(opts)
