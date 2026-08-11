@@ -72,6 +72,9 @@ Call the setup function with optional configuration: >lua
       comment_sign = "💬",
       file_tree_width = 30,
       auto_save = true,
+      format = {
+        include_diff = true,
+      },
       keymaps = {
         add_comment = "<leader>rc",
         confirm_comment = "<A-CR>",
@@ -193,6 +196,13 @@ file_tree_width~
 auto_save~
     Default: true
     Automatically save the session after changes (debounced 500ms).
+
+format.include_diff~
+    Default: true
+    Include diff hunks as fenced code blocks in the Markdown generated
+    by |:ReviewThemSubmit|. Set to `false` for a compact output with
+    only file paths, line numbers, and comment text — useful when
+    pasting to a coding agent that can read the files itself.
 
 keymaps~
     Table of keymap bindings. Set any key to `""` to disable it.
