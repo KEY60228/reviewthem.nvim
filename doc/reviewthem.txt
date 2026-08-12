@@ -70,6 +70,7 @@ Call the setup function with optional configuration: >lua
 
     require("reviewthem").setup({
       comment_sign = "💬",
+      inline_comments = true,
       file_tree_width = 30,
       auto_save = true,
       format = {
@@ -188,6 +189,13 @@ In the file tree sidebar:
 comment_sign~
     Default: "💬"
     Sign displayed at the end of commented lines in the diff view.
+
+inline_comments~
+    Default: true
+    Render the full comment text inline below the commented line in the
+    diff view using virtual lines. Blank filler lines are added to the
+    opposite pane so both sides stay aligned. Set to false to only show
+    the comment_sign indicator.
 
 file_tree_width~
     Default: 30

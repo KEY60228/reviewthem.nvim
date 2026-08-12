@@ -124,21 +124,54 @@ local function build_split_content(file)
   return old_lines, new_lines, old_map, new_map
 end
 
+---@type table<number, number> Last wrap width used per buffer, to skip no-op refreshes
+local wrap_widths = {}
+
+--- Wrap width for inline comment text: keep blocks readable without
+--- overflowing the window.
+---@param bufnr number
+---@return number
+local function compute_wrap_width(bufnr)
+  local winid = vim.fn.bufwinid(bufnr)
+  local win_width = winid ~= -1 and vim.api.nvim_win_get_width(winid) or vim.o.columns
+  return math.max(20, math.min(80, win_width - 10))
+end
+
 --- Apply decorations to a split buffer.
 ---@param bufnr number
 ---@param line_map table[]
 ---@param session ReviewSession
+---@return table<number, number> inline_heights  virt_lines count per 0-indexed row
 local function apply_split_decorations(bufnr, line_map, session)
   renderer.clear(bufnr)
 
+  local config = require("reviewthem.config").get()
+
   local comment_lookup = {}
+  local inline_lookup = {}
   for _, c in ipairs(session.comments) do
     for l = c.start_line, c.end_line do
       comment_lookup[c.file .. ":" .. c.side .. ":" .. l] = true
     end
+    if config.inline_comments then
+      local key = c.file .. ":" .. c.side .. ":" .. c.end_line
+      inline_lookup[key] = inline_lookup[key] or {}
+      table.insert(inline_lookup[key], c)
+    end
+  end
+  for _, list in pairs(inline_lookup) do
+    table.sort(list, function(a, b)
+      if a.start_line ~= b.start_line then
+        return a.start_line < b.start_line
+      end
+      return tostring(a.id) < tostring(b.id)
+    end)
   end
 
-  local config = require("reviewthem.config").get()
+  local wrap_width = compute_wrap_width(bufnr)
+  wrap_widths[bufnr] = wrap_width
+
+  local inline_heights = {}
 
   for i, entry in ipairs(line_map) do
     local line_idx = i - 1
@@ -152,12 +185,78 @@ local function apply_split_decorations(bufnr, line_map, session)
       if comment_lookup[key] then
         renderer.add_comment_sign(bufnr, line_idx, config.comment_sign)
       end
+      local inline_comments = inline_lookup[key]
+      if inline_comments then
+        inline_heights[line_idx] =
+          renderer.add_inline_comments(bufnr, line_idx, inline_comments, config.comment_sign, wrap_width)
+      end
     elseif entry.type == "padding" then
       vim.api.nvim_buf_set_extmark(bufnr, renderer.get_namespace(), line_idx, 0, {
         line_hl_group = "ReviewThemPadding",
       })
     end
   end
+
+  return inline_heights
+end
+
+--- Decorate both panes of the current view.
+--- Inline comment blocks only exist on the side they belong to, so the opposite
+--- pane gets blank filler lines of the same height. Without them the panes would
+--- drift apart on screen: 'scrollbind' syncs buffer lines, not screen rows.
+---@param session ReviewSession
+local function apply_both_decorations(session)
+  local old_bufnr = view_state.old_bufnr
+  local new_bufnr = view_state.new_bufnr
+  local old_valid = old_bufnr ~= nil and vim.api.nvim_buf_is_valid(old_bufnr)
+  local new_valid = new_bufnr ~= nil and vim.api.nvim_buf_is_valid(new_bufnr)
+
+  local old_heights = old_valid and apply_split_decorations(old_bufnr, view_state.line_map_old, session) or {}
+  local new_heights = new_valid and apply_split_decorations(new_bufnr, view_state.line_map_new, session) or {}
+
+  if not (old_valid and new_valid) then
+    return
+  end
+
+  -- Both line maps are built in lockstep, so a row index means the same
+  -- position in either pane.
+  for line_idx, height in pairs(old_heights) do
+    renderer.add_filler_lines(new_bufnr, line_idx, height - (new_heights[line_idx] or 0))
+  end
+  for line_idx, height in pairs(new_heights) do
+    renderer.add_filler_lines(old_bufnr, line_idx, height - (old_heights[line_idx] or 0))
+  end
+end
+
+local RESIZE_AUGROUP = "ReviewThemSplitResize"
+
+--- Re-render decorations when a pane resize changes the inline comment wrap
+--- width. Registered once per render; the augroup is cleared on re-register.
+local function setup_resize_refresh()
+  local group = vim.api.nvim_create_augroup(RESIZE_AUGROUP, { clear = true })
+  vim.api.nvim_create_autocmd({ "WinResized", "VimResized" }, {
+    group = group,
+    callback = function()
+      local session = view_state.session
+      if not session then
+        return
+      end
+      local changed = false
+      for _, bufnr in ipairs({ view_state.old_bufnr, view_state.new_bufnr }) do
+        if bufnr and vim.api.nvim_buf_is_valid(bufnr) and wrap_widths[bufnr] ~= compute_wrap_width(bufnr) then
+          changed = true
+        end
+      end
+      if not changed then
+        return
+      end
+      vim.schedule(function()
+        if view_state.session then
+          M.refresh_decorations(view_state.session)
+        end
+      end)
+    end,
+  })
 end
 
 --- Prevent accidental close of diff buffer windows.
@@ -288,11 +387,7 @@ M.render_file = function(session, file, old_winnr, new_winnr)
     end
   end
 
-  -- Apply decorations
-  apply_split_decorations(old_bufnr, old_map, session)
-  apply_split_decorations(new_bufnr, new_map, session)
-
-  -- Update state
+  -- Update state (decorations below need both line maps for pane alignment)
   view_state.old_bufnr = old_bufnr
   view_state.new_bufnr = new_bufnr
   view_state.old_winnr = old_winnr
@@ -301,17 +396,18 @@ M.render_file = function(session, file, old_winnr, new_winnr)
   view_state.line_map_new = new_map
   view_state.current_file = file.path
   view_state.session = session
+
+  -- Apply decorations
+  apply_both_decorations(session)
+
+  -- Re-wrap inline comments when the panes change width
+  setup_resize_refresh()
 end
 
 --- Refresh decorations for the current split view.
 ---@param session ReviewSession
 M.refresh_decorations = function(session)
-  if view_state.old_bufnr and vim.api.nvim_buf_is_valid(view_state.old_bufnr) then
-    apply_split_decorations(view_state.old_bufnr, view_state.line_map_old, session)
-  end
-  if view_state.new_bufnr and vim.api.nvim_buf_is_valid(view_state.new_bufnr) then
-    apply_split_decorations(view_state.new_bufnr, view_state.line_map_new, session)
-  end
+  apply_both_decorations(session)
 end
 
 --- Get context info for cursor position in either split buffer.
@@ -399,11 +495,13 @@ end
 --- Close split view buffers.
 M.close = function()
   closing_intentionally = true
+  pcall(vim.api.nvim_del_augroup_by_name, RESIZE_AUGROUP)
   for _, bufnr in ipairs({ view_state.old_bufnr, view_state.new_bufnr }) do
     if bufnr and vim.api.nvim_buf_is_valid(bufnr) then
       vim.api.nvim_buf_delete(bufnr, { force = true })
     end
   end
+  wrap_widths = {}
   view_state.old_bufnr = nil
   view_state.new_bufnr = nil
   view_state.old_winnr = nil
