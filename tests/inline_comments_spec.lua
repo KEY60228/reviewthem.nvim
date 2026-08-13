@@ -236,6 +236,77 @@ local raw_expected = (raw_text:gsub("\255", "<ff>"))
 check(#raw_body > 1, "a line longer than the wrap width is split")
 check(table.concat(raw_body, "") == raw_expected, "wrapping keeps bytes that are not valid UTF-8")
 
+-- A UTF-8 continuation byte at the very start of a line cannot be matched by
+-- the wrap iterator's pattern; it must still be kept, not dropped.
+local lead_text = "\128" .. "0123456789" .. "0123456789"
+local lead_body = render_body(lead_text, 8)
+local lead_expected = (lead_text:gsub("\128", "<80>"))
+check(#lead_body > 1, "a line starting with a continuation byte is split when too long")
+check(
+  table.concat(lead_body, "") == lead_expected,
+  "wrapping keeps a continuation byte at the start of a line"
+)
+
+-- Control chars are drawn caret-notated (^X, two cells) in virt_lines but
+-- nvim_strwidth measures the raw char as one cell; they must be normalized so
+-- wrapped lines do not overflow the wrap width.
+local esc_body = render_body("abc\27def", 40)
+check(#esc_body == 1 and esc_body[1] == "abc^[def", "control char rendered in literal caret notation")
+local ctrl_body = render_body(string.rep("\27x", 20), 20)
+local ctrl_max = 0
+for _, line in ipairs(ctrl_body) do
+  ctrl_max = math.max(ctrl_max, vim.api.nvim_strwidth(line))
+end
+check(
+  #ctrl_body > 1 and ctrl_max <= 20,
+  string.format("control-char text wraps within the wrap width (got %d, limit 20)", ctrl_max)
+)
+
+-- VimResized fires globally: refreshing while another tabpage is current must
+-- still wrap to the pane width, not fall back to the full screen width.
+vim.cmd("tabnew")
+split.refresh_decorations(session)
+local tab_max = 0
+for _, m in ipairs(comment_block_marks(new_bufnr)) do
+  for _, text in ipairs(m.lines) do
+    local body = text:match("│ (.*)$")
+    if body then
+      tab_max = math.max(tab_max, vim.api.nvim_strwidth(body))
+    end
+  end
+end
+check(
+  tab_max > 0 and tab_max <= wrap_width,
+  string.format("refresh from another tabpage keeps the pane wrap width (got %d, limit %d)", tab_max, wrap_width)
+)
+vim.cmd("tabclose")
+
+-- A range whose end_line is not a rendered lineno (e.g. saved by an older
+-- version that overshot the hunk) must still display, anchored at the last
+-- rendered line of the range.
+local overshoot_session = {
+  comments = {
+    {
+      id = "o1",
+      file = "test.lua",
+      side = "new",
+      start_line = 2,
+      end_line = 5,
+      text = "range overshoots the hunk",
+      created_at = 0,
+      updated_at = 0,
+    },
+  },
+}
+split.refresh_decorations(overshoot_session)
+local overshoot_blocks = comment_block_marks(new_bufnr)
+check(#overshoot_blocks == 1, "comment whose end_line is beyond the hunk still renders a block")
+-- Buffer layout: row 4 is context line new_lineno=3, the last rendered line in range 2-5
+check(
+  overshoot_blocks[1] and overshoot_blocks[1].row == 4,
+  "overshooting range anchors at the last rendered line of the range"
+)
+
 -- Toggle off: no virt_lines should be produced on either pane
 require("reviewthem.config").setup({ inline_comments = false })
 split.refresh_decorations(session)
