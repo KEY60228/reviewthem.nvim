@@ -31,6 +31,14 @@ M.get_cursor_context = function()
   return split.get_cursor_context()
 end
 
+--- Get context for a range of buffer rows.
+---@param row1 number
+---@param row2 number
+---@return table|nil
+M.get_range_context = function(row1, row2)
+  return split.get_range_context(row1, row2)
+end
+
 --- Show a specific file.
 ---@param session ReviewSession
 ---@param file DiffFile

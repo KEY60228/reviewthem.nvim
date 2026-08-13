@@ -248,18 +248,24 @@ register_session_commands = function()
     local state = require("reviewthem.session.state")
     local session = state.get_active()
     local ui_mod = require("reviewthem.ui")
-    local context = ui_mod.get_cursor_context()
+
+    -- Resolve selected buffer rows to file linenos via the line map: buffer
+    -- rows include padding and header lines, so adding the row delta to the
+    -- start lineno would overshoot the hunk.
+    local context
+    if cmd.range == 2 then
+      context = ui_mod.get_range_context(cmd.line1, cmd.line2)
+    else
+      context = ui_mod.get_cursor_context()
+    end
 
     if not context then
       vim.notify("Place cursor on a diff line to add a comment.", vim.log.levels.WARN)
       return
     end
 
-    local start_line = context.lineno
-    local end_line = context.lineno
-    if cmd.range == 2 then
-      end_line = start_line + (cmd.line2 - cmd.line1)
-    end
+    local start_line = context.start_lineno
+    local end_line = context.end_lineno
 
     local prefix = context.hunk_line.type == "add" and "+" or
                    context.hunk_line.type == "remove" and "-" or " "

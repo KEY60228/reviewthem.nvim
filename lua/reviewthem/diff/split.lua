@@ -132,9 +132,14 @@ local wrap_widths = {}
 ---@param bufnr number
 ---@return number
 local function compute_wrap_width(bufnr)
-  local winid = vim.fn.bufwinid(bufnr)
-  local win_width = winid ~= -1 and vim.api.nvim_win_get_width(winid) or vim.o.columns
-  return math.max(20, math.min(80, win_width - 10))
+  -- win_findbuf searches all tabpages; bufwinid only searches the current
+  -- one, which made a resize from another tab fall back to the full screen
+  -- width and persist a wrap width wider than the pane.
+  local winid = vim.fn.win_findbuf(bufnr)[1]
+  if not winid then
+    return wrap_widths[bufnr] or math.max(20, math.min(80, vim.o.columns - 10))
+  end
+  return math.max(20, math.min(80, vim.api.nvim_win_get_width(winid) - 10))
 end
 
 --- Apply decorations to a split buffer.
@@ -147,6 +152,17 @@ local function apply_split_decorations(bufnr, line_map, session)
 
   local config = require("reviewthem.config").get()
 
+  -- Linenos actually rendered in this buffer. A comment's end_line may not
+  -- be among them (e.g. a range saved by an older version overshot the
+  -- hunk), so inline blocks anchor at the last rendered line of their range
+  -- instead of blindly at end_line — otherwise the block silently vanishes.
+  local rendered = {}
+  for _, entry in ipairs(line_map) do
+    if entry.type == "diff_line" then
+      rendered[entry.file .. ":" .. entry.side .. ":" .. entry.lineno] = true
+    end
+  end
+
   local comment_lookup = {}
   local inline_lookup = {}
   for _, c in ipairs(session.comments) do
@@ -154,9 +170,14 @@ local function apply_split_decorations(bufnr, line_map, session)
       comment_lookup[c.file .. ":" .. c.side .. ":" .. l] = true
     end
     if config.inline_comments then
-      local key = c.file .. ":" .. c.side .. ":" .. c.end_line
-      inline_lookup[key] = inline_lookup[key] or {}
-      table.insert(inline_lookup[key], c)
+      for l = c.end_line, c.start_line, -1 do
+        local key = c.file .. ":" .. c.side .. ":" .. l
+        if rendered[key] then
+          inline_lookup[key] = inline_lookup[key] or {}
+          table.insert(inline_lookup[key], c)
+          break
+        end
+      end
     end
   end
   for _, list in pairs(inline_lookup) do
@@ -400,12 +421,14 @@ M.refresh_decorations = function(session)
   apply_both_decorations(session)
 end
 
---- Get context info for cursor position in either split buffer.
+--- Get context info for a range of buffer rows in either split buffer.
+--- Rows that are not diff lines (padding, hunk/file headers) are skipped, so
+--- start_lineno/end_lineno cover only real file lines within the range.
+---@param row1 number  1-indexed first buffer row
+---@param row2 number  1-indexed last buffer row
 ---@return table|nil
-M.get_cursor_context = function()
+M.get_range_context = function(row1, row2)
   local current_buf = vim.api.nvim_get_current_buf()
-  local cursor = vim.api.nvim_win_get_cursor(0)
-  local row = cursor[1]
 
   local line_map
   if current_buf == view_state.old_bufnr then
@@ -416,17 +439,35 @@ M.get_cursor_context = function()
     return nil
   end
 
-  local entry = line_map[row]
-  if not entry or entry.type ~= "diff_line" then
+  local first, start_lineno, end_lineno
+  for row = row1, row2 do
+    local entry = line_map[row]
+    if entry and entry.type == "diff_line" then
+      first = first or entry
+      start_lineno = math.min(start_lineno or entry.lineno, entry.lineno)
+      end_lineno = math.max(end_lineno or entry.lineno, entry.lineno)
+    end
+  end
+
+  if not first then
     return nil
   end
 
   return {
-    file = entry.file,
-    side = entry.side,
-    lineno = entry.lineno,
-    hunk_line = entry.hunk_line,
+    file = first.file,
+    side = first.side,
+    lineno = first.lineno,
+    start_lineno = start_lineno,
+    end_lineno = end_lineno,
+    hunk_line = first.hunk_line,
   }
+end
+
+--- Get context info for cursor position in either split buffer.
+---@return table|nil
+M.get_cursor_context = function()
+  local row = vim.api.nvim_win_get_cursor(0)[1]
+  return M.get_range_context(row, row)
 end
 
 --- Get the current file being viewed.

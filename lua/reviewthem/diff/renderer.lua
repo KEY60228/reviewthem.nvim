@@ -100,9 +100,7 @@ local function wrap_line(line, max_width)
   local wrapped = {}
   local current = ""
   local current_width = 0
-  -- Iterate over characters: any non-continuation byte starts a new one, so
-  -- bytes that are not valid UTF-8 are kept instead of being dropped.
-  for ch in line:gmatch("[^\128-\191][\128-\191]*") do
+  local function take(ch)
     local w = vim.api.nvim_strwidth(ch)
     if current_width + w > max_width and current ~= "" then
       table.insert(wrapped, current)
@@ -111,6 +109,17 @@ local function wrap_line(line, max_width)
     end
     current = current .. ch
     current_width = current_width + w
+  end
+  -- Iterate over characters: any non-continuation byte starts a new one, so
+  -- bytes that are not valid UTF-8 are kept instead of being dropped. The
+  -- pattern cannot match continuation bytes at the start of the string, so
+  -- take that run separately first.
+  local head = line:match("^[\128-\191]+")
+  if head then
+    take(head)
+  end
+  for ch in line:sub(head and #head + 1 or 1):gmatch("[^\128-\191][\128-\191]*") do
+    take(ch)
   end
   if current ~= "" then
     table.insert(wrapped, current)
@@ -124,6 +133,13 @@ end
 ---@return string[]
 local function comment_display_lines(text)
   local normalized = text:gsub("\r\n", "\n"):gsub("\r", "\n"):gsub("\t", "    ")
+  -- Remaining control chars are drawn caret-notated by virt_lines (^X, two
+  -- cells) but measured as one cell by nvim_strwidth; make the caret form
+  -- literal so measured and drawn widths agree.
+  normalized = normalized:gsub("[%z\1-\9\11-\31\127]", function(c)
+    local b = c:byte()
+    return b == 127 and "^?" or ("^" .. string.char(b + 64))
+  end)
   return vim.split(normalized, "\n", { plain = true })
 end
 

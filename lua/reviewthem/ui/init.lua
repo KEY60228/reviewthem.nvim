@@ -160,6 +160,14 @@ M.get_cursor_context = function()
   return diff_view.get_cursor_context()
 end
 
+--- Get context for a range of buffer rows from the active diff view.
+---@param row1 number
+---@param row2 number
+---@return table|nil
+M.get_range_context = function(row1, row2)
+  return diff_view.get_range_context(row1, row2)
+end
+
 --- Check if the UI is open.
 ---@return boolean
 M.is_open = function()
