@@ -29,7 +29,7 @@ end
 ---@param session ReviewSession
 local function parse_all_hunks(session)
   for _, file in ipairs(session.diff_files) do
-    local diff_lines = git.get_file_diff(session.base_ref, session.compare_ref, file.path)
+    local diff_lines = git.get_file_diff(session.base_ref, session.compare_ref, file)
     file.hunks = diff_parser.parse(diff_lines)
   end
 end
