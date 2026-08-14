@@ -108,6 +108,11 @@ M.open = function(items, opts, on_choice)
   end
 
   local function cancel()
+    -- The BufLeave autocmd schedules a cancel whenever the window closes,
+    -- including after a confirm — only report a cancel if we close it here.
+    if closed then
+      return
+    end
     close()
     on_choice(nil)
   end
