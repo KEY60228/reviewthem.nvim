@@ -53,7 +53,7 @@ use {
    ```vim
    :ReviewThemStart main feature-branch
    ```
-   Or review uncommitted changes:
+   Or review uncommitted changes (staged, unstaged, and untracked):
    ```vim
    :ReviewThemStart
    ```
