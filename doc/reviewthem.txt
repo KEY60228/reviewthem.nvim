@@ -101,9 +101,11 @@ WHEN NO REVIEW IS ACTIVE ~
                                                             *:ReviewThemStart*
 :ReviewThemStart [{base}] [{compare}] [--name={name}]
     Start a new review session. Git ref completion is supported.
-    - No arguments: compare HEAD with working directory.
-    - {base} only: compare {base} with working directory.
-    - Both: compare {base} with {compare}.
+    - No arguments: compare HEAD with the working directory. Both staged
+      and unstaged changes are included, plus untracked files.
+    - {base} only: compare the merge base of HEAD and {base} with the
+      working directory (like a GitHub PR diff against {base}).
+    - Both: compare {base}...{compare} (three-dot merge-base diff).
     - --name={name}: assign a session name.
 
                                                          *:ReviewThemSessions*

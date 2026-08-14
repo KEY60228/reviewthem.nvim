@@ -13,7 +13,9 @@
 
 ---@class DiffFile
 ---@field path string
----@field status string
+---@field status string  Single-letter git status (A/M/D/R/C/...)
+---@field old_path string|nil  Previous path for renames/copies
+---@field untracked boolean|nil  True for files not yet tracked by git
 ---@field hunks Hunk[]
 
 ---@class Hunk

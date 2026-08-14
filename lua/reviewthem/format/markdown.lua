@@ -56,7 +56,11 @@ M.format = function(session)
       M = "Modified",
       D = "Deleted",
       R = "Renamed",
+      C = "Copied",
     })[file.status] or file.status
+    if file.old_path then
+      status_label = string.format("%s from %s", status_label, file.old_path)
+    end
 
     table.insert(parts, string.format("## %s (%s)", file.path, status_label))
     table.insert(parts, "")
