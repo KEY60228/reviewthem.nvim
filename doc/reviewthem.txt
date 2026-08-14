@@ -142,7 +142,9 @@ DURING AN ACTIVE REVIEW ~
                                                            *:ReviewThemSubmit*
 :ReviewThemSubmit
     Generate Markdown output of all comments and copy to clipboard.
-    Closes the review UI.
+    Closes the review UI and DELETES the session data — paste the
+    clipboard content before copying anything else, or the review is
+    lost. Use |:ReviewThemPause| instead to keep the session.
 
                                                             *:ReviewThemPause*
 :ReviewThemPause
