@@ -94,22 +94,27 @@ M.close = function()
   local ok, err = pcall(function()
     -- Ensure a surviving window by switching one diff pane to a blank buffer
     -- before deleting scratch buffers (which force-close their windows).
+    -- Unlisted scratch + bufhidden=wipe so it cleans itself up and is
+    -- distinguishable from the user's own [No Name] buffers below.
     local survivor = find_win_by_buf_name("reviewthem://new")
       or find_win_by_buf_name("reviewthem://old")
     if survivor and vim.api.nvim_win_is_valid(survivor) then
-      local buf = vim.api.nvim_create_buf(true, false)
+      local buf = vim.api.nvim_create_buf(false, true)
+      vim.bo[buf].bufhidden = "wipe"
       vim.api.nvim_win_set_buf(survivor, buf)
     end
 
     file_tree.close()
     diff_view.close()
 
-    -- Close leftover empty windows from deleted buffers
+    -- Close leftover windows showing our unlisted placeholder buffers.
+    -- Never touch listed buffers: an empty [No Name] window may be the
+    -- user's own.
     for _, winnr in ipairs(vim.api.nvim_list_wins()) do
       if vim.api.nvim_win_is_valid(winnr) and #vim.api.nvim_list_wins() > 1 then
         local buf = vim.api.nvim_win_get_buf(winnr)
         local name = vim.api.nvim_buf_get_name(buf)
-        if name == "" and vim.api.nvim_buf_line_count(buf) <= 1 then
+        if name == "" and not vim.bo[buf].buflisted and vim.api.nvim_buf_line_count(buf) <= 1 then
           pcall(vim.api.nvim_win_close, winnr, true)
         end
       end
