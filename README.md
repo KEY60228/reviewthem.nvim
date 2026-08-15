@@ -146,6 +146,9 @@ require("reviewthem").setup({
   comment_sign = "💬",        -- sign shown on commented lines
   file_tree_width = 30,       -- sidebar width in columns
   auto_save = true,           -- auto-save session on changes
+  format = {
+    include_diff = true,      -- include diff hunks in the submitted Markdown
+  },
   keymaps = {
     add_comment = "<leader>rc",
     confirm_comment = "<A-CR>",

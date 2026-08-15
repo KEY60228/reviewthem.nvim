@@ -6,4 +6,5 @@ end
 if vim.g.loaded_reviewthem == 1 then
   return
 end
+math.randomseed(os.clock() * 1000 + vim.uv.hrtime() % 1000000)
 vim.g.loaded_reviewthem = 1

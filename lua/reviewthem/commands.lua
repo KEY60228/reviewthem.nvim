@@ -90,11 +90,16 @@ register_idle_commands = function()
     nargs = "*",
     complete = function(arg_lead, cmdline)
       local args = vim.split(cmdline, "%s+", { trimempty = true })
-      local n = #args
-      if cmdline:match("%s$") then
-        n = n + 1
+      local positional = 0
+      for i = 2, #args do
+        if not args[i]:match("^%-%-name=") then
+          positional = positional + 1
+        end
       end
-      if n > 3 then
+      if cmdline:match("%s$") and not arg_lead:match("^%-%-name=") then
+        positional = positional + 1
+      end
+      if positional > 2 then
         return {}
       end
       local matches = {}
@@ -248,6 +253,7 @@ register_session_commands = function()
   vim.api.nvim_create_user_command("ReviewThemAddComment", function(cmd)
     local state = require("reviewthem.session.state")
     local session = state.get_active()
+    if not session then return end
     local ui_mod = require("reviewthem.ui")
     local context = ui_mod.get_cursor_context()
 
@@ -259,7 +265,10 @@ register_session_commands = function()
     local start_line = context.lineno
     local end_line = context.lineno
     if cmd.range == 2 then
-      end_line = start_line + (cmd.line2 - cmd.line1)
+      local end_context = ui_mod.get_line_context(vim.api.nvim_get_current_buf(), cmd.line2)
+      if end_context and end_context.side == context.side then
+        end_line = end_context.lineno
+      end
     end
 
     local prefix = context.hunk_line.type == "add" and "+" or
@@ -377,6 +386,7 @@ register_session_commands = function()
   vim.api.nvim_create_user_command("ReviewThemShowComments", function()
     local state = require("reviewthem.session.state")
     local session = state.get_active()
+    if not session then return end
     local ui_mod = require("reviewthem.ui")
 
     local comments = session.comments
@@ -468,6 +478,7 @@ register_session_commands = function()
     else
       local state = require("reviewthem.session.state")
       local session = state.get_active()
+      if not session then return end
       local ui_mod = require("reviewthem.ui")
       file_tree.open(session, function(file_path)
         ui_mod.jump_to_file(file_path)

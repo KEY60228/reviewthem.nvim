@@ -202,6 +202,11 @@ M.set_closing_intentionally = function()
   closing_intentionally = true
 end
 
+--- Reset close-intentional flag (used as safety net if close is interrupted).
+M.reset_closing_intentionally = function()
+  closing_intentionally = false
+end
+
 --- Create or get a buffer for split view.
 ---@param name string
 ---@return number bufnr
@@ -261,22 +266,27 @@ M.render_file = function(session, file, old_winnr, new_winnr)
 
     -- Only show cursorline in focused window
     local bufnr = vim.api.nvim_win_get_buf(winnr)
-    vim.api.nvim_create_autocmd("WinEnter", {
-      buffer = bufnr,
-      callback = function()
-        if vim.api.nvim_win_is_valid(winnr) then
-          util.set_win_local(winnr, "cursorline", true)
-        end
-      end,
-    })
-    vim.api.nvim_create_autocmd("WinLeave", {
-      buffer = bufnr,
-      callback = function()
-        if vim.api.nvim_win_is_valid(winnr) then
-          util.set_win_local(winnr, "cursorline", false)
-        end
-      end,
-    })
+    if not vim.b[bufnr].reviewthem_cursorline_set then
+      vim.b[bufnr].reviewthem_cursorline_set = true
+      vim.api.nvim_create_autocmd("WinEnter", {
+        buffer = bufnr,
+        callback = function()
+          local win = vim.api.nvim_get_current_win()
+          if vim.api.nvim_win_is_valid(win) then
+            util.set_win_local(win, "cursorline", true)
+          end
+        end,
+      })
+      vim.api.nvim_create_autocmd("WinLeave", {
+        buffer = bufnr,
+        callback = function()
+          local win = vim.api.nvim_get_current_win()
+          if vim.api.nvim_win_is_valid(win) then
+            util.set_win_local(win, "cursorline", false)
+          end
+        end,
+      })
+    end
   end
 
   -- Apply decorations
@@ -316,6 +326,33 @@ M.get_cursor_context = function()
   if current_buf == view_state.old_bufnr then
     line_map = view_state.line_map_old
   elseif current_buf == view_state.new_bufnr then
+    line_map = view_state.line_map_new
+  else
+    return nil
+  end
+
+  local entry = line_map[row]
+  if not entry or entry.type ~= "diff_line" then
+    return nil
+  end
+
+  return {
+    file = entry.file,
+    side = entry.side,
+    lineno = entry.lineno,
+    hunk_line = entry.hunk_line,
+  }
+end
+
+--- Get context for a specific buffer row (without moving the cursor).
+---@param bufnr number
+---@param row number 1-based row
+---@return table|nil
+M.get_line_context = function(bufnr, row)
+  local line_map
+  if bufnr == view_state.old_bufnr then
+    line_map = view_state.line_map_old
+  elseif bufnr == view_state.new_bufnr then
     line_map = view_state.line_map_new
   else
     return nil

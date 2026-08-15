@@ -4,6 +4,9 @@ local M = {}
 ---@param session ReviewSession
 ---@return string
 M.format = function(session)
+  local config = require("reviewthem.config").get()
+  local include_diff = vim.tbl_get(config, "format", "include_diff") ~= false
+
   local parts = {}
 
   -- Header
@@ -70,7 +73,7 @@ M.format = function(session)
       table.insert(parts, "")
 
       -- Diff hunk context
-      if c.diff_hunk and c.diff_hunk ~= "" then
+      if include_diff and c.diff_hunk and c.diff_hunk ~= "" then
         table.insert(parts, "```diff")
         table.insert(parts, c.diff_hunk)
         table.insert(parts, "```")
