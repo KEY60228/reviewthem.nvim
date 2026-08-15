@@ -1,3 +1,5 @@
+local util = require("reviewthem.util")
+
 local M = {}
 
 local ns = vim.api.nvim_create_namespace("reviewthem_file_tree")
@@ -240,23 +242,23 @@ M.open = function(session, on_select, on_toggle_reviewed)
   local config = require("reviewthem.config").get()
   vim.api.nvim_win_set_width(winnr, config.file_tree_width)
 
-  vim.wo[winnr].number = false
-  vim.wo[winnr].relativenumber = false
-  vim.wo[winnr].signcolumn = "no"
-  vim.wo[winnr].winfixwidth = true
-  vim.wo[winnr].wrap = false
-  vim.wo[winnr].cursorline = true
-  vim.wo[winnr].foldcolumn = "0"
-  vim.wo[winnr].spell = false
-  vim.wo[winnr].scrollbind = false
-  vim.wo[winnr].cursorbind = false
+  util.set_win_local(winnr, "number", false)
+  util.set_win_local(winnr, "relativenumber", false)
+  util.set_win_local(winnr, "signcolumn", "no")
+  util.set_win_local(winnr, "winfixwidth", true)
+  util.set_win_local(winnr, "wrap", false)
+  util.set_win_local(winnr, "cursorline", true)
+  util.set_win_local(winnr, "foldcolumn", "0")
+  util.set_win_local(winnr, "spell", false)
+  util.set_win_local(winnr, "scrollbind", false)
+  util.set_win_local(winnr, "cursorbind", false)
 
   -- Only show cursorline in focused window
   vim.api.nvim_create_autocmd("WinEnter", {
     buffer = bufnr,
     callback = function()
       if vim.api.nvim_win_is_valid(winnr) then
-        vim.wo[winnr].cursorline = true
+        util.set_win_local(winnr, "cursorline", true)
       end
     end,
   })
@@ -264,7 +266,7 @@ M.open = function(session, on_select, on_toggle_reviewed)
     buffer = bufnr,
     callback = function()
       if vim.api.nvim_win_is_valid(winnr) then
-        vim.wo[winnr].cursorline = false
+        util.set_win_local(winnr, "cursorline", false)
       end
     end,
   })

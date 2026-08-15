@@ -35,6 +35,7 @@ local session_command_names = {
   "ReviewThemPause", "ReviewThemSubmit", "ReviewThemAbort",
   "ReviewThemAddComment", "ReviewThemEditComment", "ReviewThemDeleteComment",
   "ReviewThemShowComments", "ReviewThemToggleReviewed", "ReviewThemTree",
+  "ReviewThemOpenFile",
 }
 
 --- Delete a list of user commands (ignoring errors for missing ones).
@@ -460,6 +461,13 @@ register_session_commands = function()
     )
   end, {
     desc = "Toggle reviewed status for the current file",
+  })
+
+  -- :ReviewThemOpenFile
+  vim.api.nvim_create_user_command("ReviewThemOpenFile", function()
+    require("reviewthem.openfile").open_at_cursor()
+  end, {
+    desc = "Open the file under the cursor in a new tab",
   })
 
   -- :ReviewThemTree

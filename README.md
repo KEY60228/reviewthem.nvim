@@ -100,6 +100,7 @@ Commands are context-aware — session management commands are only available wh
 | `:ReviewThemDeleteComment` | Delete comment at cursor position |
 | `:ReviewThemShowComments` | List all comments (Enter=jump, d=delete) |
 | `:ReviewThemToggleReviewed` | Toggle reviewed status of current file |
+| `:ReviewThemOpenFile` | Open the file under the cursor in a new tab |
 | `:ReviewThemSubmit` | Export Markdown to clipboard and close |
 | `:ReviewThemPause` | Close UI, keep session saved |
 | `:ReviewThemAbort` | Discard session |
@@ -117,6 +118,9 @@ Default mappings in diff buffers (customizable in setup):
 | `<leader>rl` | Show all comments |
 | `<leader>re` | Focus file tree |
 | `<leader>rq` | Pause / close review |
+| `gf` | Open the file under the cursor in a new tab |
+
+`gf` (`:ReviewThemOpenFile`) opens the version shown on the side under the cursor: when that side is the working tree it opens the actual file, otherwise it opens a readonly view of the content the diff was generated from — the index, the merge base, or the compare ref. Either way, press `q` in the opened tab to return to the review (outside that tab `q` keeps its normal meaning, so macro recording is unaffected).
 
 Comment input window:
 
@@ -154,6 +158,7 @@ require("reviewthem").setup({
     show_comments = "<leader>rl",
     focus_tree = "<leader>re",
     close_review = "<leader>rq",
+    open_file = "gf",
   },
 })
 ```

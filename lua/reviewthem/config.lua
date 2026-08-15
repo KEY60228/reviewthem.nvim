@@ -16,6 +16,7 @@ M.defaults = {
     show_comments = "<leader>rl",
     focus_tree = "<leader>re",
     close_review = "<leader>rq",
+    open_file = "gf",
   },
 }
 

@@ -1,4 +1,5 @@
 local renderer = require("reviewthem.diff.renderer")
+local util = require("reviewthem.util")
 
 local M = {}
 
@@ -255,13 +256,13 @@ M.render_file = function(session, file, old_winnr, new_winnr)
 
   -- Set window options
   for _, winnr in ipairs({ old_winnr, new_winnr }) do
-    vim.wo[winnr].number = false
-    vim.wo[winnr].relativenumber = false
-    vim.wo[winnr].signcolumn = "no"
-    vim.wo[winnr].wrap = false
-    vim.wo[winnr].cursorline = true
-    vim.wo[winnr].scrollbind = true
-    vim.wo[winnr].cursorbind = true
+    util.set_win_local(winnr, "number", false)
+    util.set_win_local(winnr, "relativenumber", false)
+    util.set_win_local(winnr, "signcolumn", "no")
+    util.set_win_local(winnr, "wrap", false)
+    util.set_win_local(winnr, "cursorline", true)
+    util.set_win_local(winnr, "scrollbind", true)
+    util.set_win_local(winnr, "cursorbind", true)
 
     -- Only show cursorline in focused window
     local bufnr = vim.api.nvim_win_get_buf(winnr)
@@ -272,7 +273,7 @@ M.render_file = function(session, file, old_winnr, new_winnr)
         callback = function()
           local win = vim.api.nvim_get_current_win()
           if vim.api.nvim_win_is_valid(win) then
-            vim.wo[win].cursorline = true
+            util.set_win_local(win, "cursorline", true)
           end
         end,
       })
@@ -281,7 +282,7 @@ M.render_file = function(session, file, old_winnr, new_winnr)
         callback = function()
           local win = vim.api.nvim_get_current_win()
           if vim.api.nvim_win_is_valid(win) then
-            vim.wo[win].cursorline = false
+            util.set_win_local(win, "cursorline", false)
           end
         end,
       })

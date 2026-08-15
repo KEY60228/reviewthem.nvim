@@ -45,14 +45,46 @@ M.validate_refs = function(base_ref, compare_ref)
 end
 
 ---@param ref string
+---@param other string|nil  The other side of the comparison (defaults to "HEAD")
 ---@return string|nil
-M.get_merge_base = function(ref)
-  local cmd = string.format("git merge-base HEAD %s", vim.fn.shellescape(ref))
+M.get_merge_base = function(ref, other)
+  local cmd = string.format("git merge-base %s %s", vim.fn.shellescape(other or "HEAD"), vim.fn.shellescape(ref))
   local result = vim.fn.system(cmd)
   if vim.v.shell_error == 0 and result ~= "" then
     return vim.trim(result)
   end
   return nil
+end
+
+--- Resolve the git ref whose content matches one side of the rendered diff.
+--- Must stay in sync with `get_diff_files` / `get_file_diff`, which decide what
+--- the diff actually compares:
+---   * no refs         old = the index, new = the working tree
+---   * base_ref only   old = merge-base(HEAD, base_ref), new = the working tree
+---   * base...compare  old = merge-base(base_ref, compare_ref), new = compare_ref
+---@param base_ref string|nil
+---@param compare_ref string|nil
+---@param side "old"|"new"
+---@return string|nil ref  nil when the side shows the working tree
+M.resolve_side_ref = function(base_ref, compare_ref, side)
+  local has_base = base_ref ~= nil and base_ref ~= ""
+  local has_compare = compare_ref ~= nil and compare_ref ~= ""
+
+  if side == "new" then
+    if has_compare then
+      return compare_ref
+    end
+    return nil
+  end
+
+  if not has_compare then
+    if not has_base then
+      -- Plain `git diff` compares the index with the working tree
+      return ":0"
+    end
+    return M.get_merge_base(base_ref) or base_ref
+  end
+  return M.get_merge_base(compare_ref, base_ref) or base_ref
 end
 
 --- Get list of changed files between two refs.
@@ -67,8 +99,8 @@ M.get_diff_files = function(base_ref, compare_ref)
     if base_ref == nil or base_ref == "" then
       cmd = "git diff --name-status"
     else
-      local merge_base = M.get_merge_base(base_ref)
-      cmd = string.format("git diff --name-status %s", vim.fn.shellescape(merge_base or base_ref))
+      local old_ref = M.resolve_side_ref(base_ref, nil, "old")
+      cmd = string.format("git diff --name-status %s", vim.fn.shellescape(old_ref))
     end
     local result = vim.fn.systemlist(cmd)
     for _, line in ipairs(result) do
@@ -112,8 +144,8 @@ M.get_file_diff = function(base_ref, compare_ref, file_path, context_lines)
     if base_ref == nil or base_ref == "" then
       cmd = string.format("git diff -U%d -- %s", context_lines, vim.fn.shellescape(file_path))
     else
-      local merge_base = M.get_merge_base(base_ref)
-      cmd = string.format("git diff -U%d %s -- %s", context_lines, vim.fn.shellescape(merge_base or base_ref), vim.fn.shellescape(file_path))
+      local old_ref = M.resolve_side_ref(base_ref, nil, "old")
+      cmd = string.format("git diff -U%d %s -- %s", context_lines, vim.fn.shellescape(old_ref), vim.fn.shellescape(file_path))
     end
   else
     cmd = string.format("git diff -U%d %s...%s -- %s", context_lines, vim.fn.shellescape(base_ref), vim.fn.shellescape(compare_ref), vim.fn.shellescape(file_path))
