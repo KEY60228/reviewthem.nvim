@@ -120,7 +120,7 @@ Default mappings in diff buffers (customizable in setup):
 | `<leader>rq` | Pause / close review |
 | `gf` | Open the file under the cursor in a new tab |
 
-`gf` (`:ReviewThemOpenFile`) opens the version shown on the side under the cursor: when that side is the working tree it opens the actual file, otherwise it opens a readonly view of the content the diff was generated from — the index, the merge base, or the compare ref (press `q` there to return to the review).
+`gf` (`:ReviewThemOpenFile`) opens the version shown on the side under the cursor: when that side is the working tree it opens the actual file, otherwise it opens a readonly view of the content the diff was generated from — the index, the merge base, or the compare ref. Either way, press `q` in the opened tab to return to the review (outside that tab `q` keeps its normal meaning, so macro recording is unaffected).
 
 Comment input window:
 

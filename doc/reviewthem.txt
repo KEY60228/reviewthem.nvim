@@ -162,7 +162,9 @@ DURING AN ACTIVE REVIEW ~
     cursor. When the side under the cursor shows the working tree this
     opens the actual file; otherwise a readonly view of the content the
     diff was generated from (the index, the merge base, or the compare
-    ref) is shown (press `q` there to return to the review).
+    ref) is shown. In either case press `q` in the opened tab to close
+    it and return to the review. Outside that tab `q` keeps its normal
+    meaning (e.g. macro recording), even for the same file.
 
 ==============================================================================
 6. MAPPINGS                                                 *reviewthem-mappings*

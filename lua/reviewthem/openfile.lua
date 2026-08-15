@@ -59,6 +59,29 @@ local function set_cursor_clamped(winnr, lineno, file_path)
   end
 end
 
+--- Map `q` in the buffer to close the tab the file view was opened in.
+--- Outside that tab (the same file may be open elsewhere) the key falls
+--- through to its normal meaning, so `q` still records macros there.
+---@param bufnr number
+---@param tabpage number
+local function map_q_to_close(bufnr, tabpage)
+  vim.keymap.set("n", "q", function()
+    if vim.api.nvim_get_current_tabpage() ~= tabpage then
+      return "q"
+    end
+    if #vim.api.nvim_list_tabpages() > 1 then
+      return "<Cmd>tabclose<CR>"
+    end
+    vim.schedule(function()
+      vim.notify(
+        "reviewthem.nvim: This is the only tab page — use :bdelete to close this view.",
+        vim.log.levels.WARN
+      )
+    end)
+    return ""
+  end, { buffer = bufnr, expr = true, nowait = true, silent = true, desc = "Close file view" })
+end
+
 --- Open the working-tree version of a file in a new tab.
 ---@param session ReviewSession
 ---@param file_path string  Path relative to the git root
@@ -81,6 +104,7 @@ local function open_working_tree_file(session, file_path, lineno)
   end
 
   vim.cmd("tabedit " .. vim.fn.fnameescape(full_path))
+  map_q_to_close(vim.api.nvim_get_current_buf(), vim.api.nvim_get_current_tabpage())
   set_cursor_clamped(0, lineno, file_path)
   return true
 end
@@ -130,19 +154,8 @@ local function open_ref_file(ref, file_path, lineno)
     pcall(vim.api.nvim_buf_delete, placeholder, { force = true })
   end
 
+  map_q_to_close(bufnr, vim.api.nvim_get_current_tabpage())
   set_cursor_clamped(0, lineno, file_path)
-
-  -- q closes the tab and returns to the review tab
-  vim.keymap.set("n", "q", function()
-    if #vim.api.nvim_list_tabpages() > 1 then
-      vim.cmd("tabclose")
-    else
-      vim.notify(
-        "reviewthem.nvim: This is the only tab page — use :bdelete to close this view.",
-        vim.log.levels.WARN
-      )
-    end
-  end, { buffer = bufnr, nowait = true, silent = true, desc = "Close file view" })
 
   return true
 end
