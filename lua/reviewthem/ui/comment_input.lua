@@ -143,8 +143,13 @@ M.open = function(opts)
     safe_close()
     if text ~= "" and opts.on_confirm then
       opts.on_confirm(text)
-    elseif opts.on_cancel then
-      opts.on_cancel()
+    else
+      -- Confirming an empty comment is treated as a cancel — say so,
+      -- otherwise it looks like the input was silently swallowed.
+      vim.notify("Empty comment discarded.", vim.log.levels.WARN)
+      if opts.on_cancel then
+        opts.on_cancel()
+      end
     end
   end
 
