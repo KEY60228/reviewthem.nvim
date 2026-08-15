@@ -5,6 +5,7 @@ local ns = vim.api.nvim_create_namespace("reviewthem_file_tree")
 ---@class FileTreeState
 ---@field bufnr number|nil
 ---@field winnr number|nil
+---@field augroup number|nil
 ---@field entries FileTreeEntry[]
 ---@field collapsed table<string, boolean>  dir_path -> collapsed
 
@@ -20,6 +21,7 @@ local ns = vim.api.nvim_create_namespace("reviewthem_file_tree")
 local tree_state = {
   bufnr = nil,
   winnr = nil,
+  augroup = nil,
   entries = {},
   collapsed = {},
 }
@@ -269,6 +271,20 @@ M.open = function(session, on_select, on_toggle_reviewed)
     end,
   })
 
+  -- 'winfixwidth' excludes the tree from width redistribution when the
+  -- terminal grows back after a shrink, so a forced shrink would otherwise
+  -- stick forever. Re-assert the configured width after every resize.
+  tree_state.augroup = vim.api.nvim_create_augroup("reviewthem_file_tree_resize", { clear = true })
+  vim.api.nvim_create_autocmd("VimResized", {
+    group = tree_state.augroup,
+    callback = function()
+      if tree_state.winnr and vim.api.nvim_win_is_valid(tree_state.winnr) then
+        local width = require("reviewthem.config").get().file_tree_width
+        vim.api.nvim_win_set_width(tree_state.winnr, width)
+      end
+    end,
+  })
+
   tree_state.bufnr = bufnr
   tree_state.winnr = winnr
 
@@ -327,7 +343,13 @@ end
 
 --- Close the file tree.
 M.close = function()
-  if tree_state.winnr and vim.api.nvim_win_is_valid(tree_state.winnr) then
+  if tree_state.augroup then
+    pcall(vim.api.nvim_del_augroup_by_id, tree_state.augroup)
+    tree_state.augroup = nil
+  end
+  -- Closing the last window is an error (E444); deleting the buffer below
+  -- makes that window show an empty buffer instead.
+  if tree_state.winnr and vim.api.nvim_win_is_valid(tree_state.winnr) and #vim.api.nvim_list_wins() > 1 then
     vim.api.nvim_win_close(tree_state.winnr, true)
   end
   if tree_state.bufnr and vim.api.nvim_buf_is_valid(tree_state.bufnr) then
