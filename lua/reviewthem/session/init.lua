@@ -92,6 +92,37 @@ M.create = function(base_ref, compare_ref, opts)
   return session, nil
 end
 
+--- Refresh a session's file list against the current git state.
+--- Newly changed files are added and files without differences drop out,
+--- except files that carry comments — those are kept (with whatever diff
+--- remains) so comments are never silently lost.
+---@param session ReviewSession
+local function refresh_diff_files(session)
+  local fresh = git.get_diff_files(session.base_ref, session.compare_ref)
+
+  local fresh_paths = {}
+  for _, f in ipairs(fresh) do
+    fresh_paths[f.path] = true
+  end
+
+  local commented_paths = {}
+  for _, c in ipairs(session.comments) do
+    commented_paths[c.file] = true
+  end
+
+  for _, old_file in ipairs(session.diff_files) do
+    if commented_paths[old_file.path] and not fresh_paths[old_file.path] then
+      table.insert(fresh, {
+        path = old_file.path,
+        status = old_file.status,
+        hunks = {},
+      })
+    end
+  end
+
+  session.diff_files = fresh
+end
+
 --- Resume an existing session.
 ---@param session_id string|nil  If nil, the project_root is used to find sessions
 ---@return ReviewSession|nil, string|nil error
@@ -106,7 +137,12 @@ M.resume = function(session_id)
     if not session then
       return nil, "Session not found: " .. session_id
     end
-    -- Re-parse hunks (files may have changed)
+    -- The working tree may have moved on since the session was saved:
+    -- refresh the file list and re-parse hunks against the current state.
+    refresh_diff_files(session)
+    if #session.diff_files == 0 then
+      return nil, "No differences remain for this session"
+    end
     parse_all_hunks(session)
     store.save(session)
     state.set_active(session)
