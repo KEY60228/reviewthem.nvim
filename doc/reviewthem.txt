@@ -108,9 +108,11 @@ WHEN NO REVIEW IS ACTIVE ~
                                                             *:ReviewThemStart*
 :ReviewThemStart [{base}] [{compare}] [--name={name}]
     Start a new review session. Git ref completion is supported.
-    - No arguments: compare HEAD with working directory.
-    - {base} only: compare {base} with working directory.
-    - Both: compare {base} with {compare}.
+    - No arguments: compare HEAD with the working directory. Both staged
+      and unstaged changes are included, plus untracked files.
+    - {base} only: compare the merge base of HEAD and {base} with the
+      working directory (like a GitHub PR diff against {base}).
+    - Both: compare {base}...{compare} (three-dot merge-base diff).
     - --name={name}: assign a session name.
 
                                                          *:ReviewThemSessions*
@@ -170,7 +172,7 @@ DURING AN ACTIVE REVIEW ~
     Open the file under the cursor in a new tab, at the line under the
     cursor. When the side under the cursor shows the working tree this
     opens the actual file; otherwise a readonly view of the content the
-    diff was generated from (the index, the merge base, or the compare
+    diff was generated from (HEAD, the merge base, or the compare
     ref) is shown. In either case press `q` in the opened tab to close
     it and return to the review. Outside that tab `q` keeps its normal
     meaning (e.g. macro recording), even for the same file.
