@@ -8,7 +8,9 @@ This project is inspired by [ReviewIt](https://github.com/yoshiko-pg/reviewit) -
 
 ## Features
 
-- **Split diff view** — Side-by-side old/new comparison with syntax highlighting
+- **Split diff view** — Side-by-side old/new comparison
+- **Syntax highlighting** — Treesitter-based language highlighting in the diff view (works when a parser for the file's language is installed; the buffer holds hunks rather than whole files, so highlighting can be imperfect)
+- **Word-level diff** — The changed span within modified lines is highlighted on both sides
 - **File tree sidebar** — Browse changed files, track review progress
 - **Line-level comments** — Floating input window, supports multi-line ranges
 - **Inline comment display** — Comments are rendered as virtual text blocks right below the commented lines
@@ -151,6 +153,7 @@ require("reviewthem").setup({
   format = {
     include_diff = true,      -- include diff hunks in the submitted Markdown
   },
+  word_diff = true,           -- highlight changed spans within modified lines
   keymaps = {
     add_comment = "<leader>rc",
     confirm_comment = "<A-CR>",
