@@ -75,7 +75,10 @@ use {
    ```vim
    :ReviewThemSubmit
    ```
-   Copies a Markdown summary to your clipboard.
+   Copies a Markdown summary to your clipboard. Note: this also
+   deletes the session data, so paste the result before copying
+   anything else. Use `:ReviewThemPause` if you want to keep the
+   session around.
 
 5. **Pause and resume**
    ```vim
@@ -104,7 +107,7 @@ Commands are context-aware — session management commands are only available wh
 | `:ReviewThemShowComments` | List all comments (Enter=jump, d=delete) |
 | `:ReviewThemToggleReviewed` | Toggle reviewed status of current file |
 | `:ReviewThemOpenFile` | Open the file under the cursor in a new tab |
-| `:ReviewThemSubmit` | Export Markdown to clipboard and close |
+| `:ReviewThemSubmit` | Export Markdown to clipboard, close, and delete the session |
 | `:ReviewThemPause` | Close UI, keep session saved |
 | `:ReviewThemAbort` | Discard session |
 | `:ReviewThemTree` | Toggle file tree sidebar |
