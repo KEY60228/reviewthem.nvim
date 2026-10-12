@@ -6,6 +6,9 @@ local M = {}
 ---@type ReviewSession|nil
 local active_session = nil
 
+---@type number|nil Augroup for resize handling
+local resize_augroup = nil
+
 ---@type boolean Whether nvim-tree was open before review started
 local nvimtree_was_open = false
 
@@ -81,12 +84,33 @@ M.open = function(session)
   -- 3. Render first file
   diff_view.open(session, old_winnr, new_winnr)
 
-  -- 4. Focus the new (compare) pane
+  -- 4. Rebalance diff panes after terminal resize. A hard shrink can crush
+  --    one pane down to 'winminwidth', and growing back gives all the space
+  --    to a single pane; split the panes' combined width evenly again.
+  resize_augroup = vim.api.nvim_create_augroup("reviewthem_ui_resize", { clear = true })
+  vim.api.nvim_create_autocmd("VimResized", {
+    group = resize_augroup,
+    callback = function()
+      local old_win = find_win_by_buf_name("reviewthem://old")
+      local new_win = find_win_by_buf_name("reviewthem://new")
+      if old_win and new_win then
+        local total = vim.api.nvim_win_get_width(old_win) + vim.api.nvim_win_get_width(new_win)
+        vim.api.nvim_win_set_width(old_win, math.floor(total / 2))
+      end
+    end,
+  })
+
+  -- 5. Focus the new (compare) pane
   vim.api.nvim_set_current_win(new_winnr)
 end
 
 --- Close the full review UI.
 M.close = function()
+  if resize_augroup then
+    pcall(vim.api.nvim_del_augroup_by_id, resize_augroup)
+    resize_augroup = nil
+  end
+
   -- Mark as intentional so BufWinLeave protection doesn't auto-pause
   local split = require("reviewthem.diff.split")
   split.set_closing_intentionally()
